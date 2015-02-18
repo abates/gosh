@@ -3,6 +3,9 @@
 *.a
 *.so
 
+# coverage profiles
+*.coverprofile
+
 # Folders
 _obj
 _test
@@ -22,3 +25,7 @@ _testmain.go
 *.exe
 *.test
 *.prof
+
+# Hidden files
+.*
+!/.gitignore
