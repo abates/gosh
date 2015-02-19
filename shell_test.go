@@ -61,7 +61,7 @@ func (e errorCommand) SubCommands() CommandMap {
 	return nil
 }
 
-func (e errorCommand) Exec(arguments []Argument) error {
+func (e errorCommand) Exec(arguments []string) error {
 	return errors.New("This command failed to execute")
 }
 
@@ -112,18 +112,6 @@ var _ = Describe("Shell", func() {
 				line, _, _ := stderr.ReadLine()
 				Expect(string(line)).To(Equal("This command failed to execute"))
 			})
-		})
-	})
-
-	Describe("parsing the line into arguments", func() {
-		It("Should parse a line into fields and convert them into an array of Argument", func() {
-			args := getArguments("cmd arg1 arg2 arg3")
-			Expect(args).To(Equal([]Argument{
-				Argument("cmd"),
-				Argument("arg1"),
-				Argument("arg2"),
-				Argument("arg3"),
-			}))
 		})
 	})
 })

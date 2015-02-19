@@ -27,7 +27,7 @@ func (c *mySimpleCommand) SubCommands() CommandMap {
 	return nil
 }
 
-func (c *mySimpleCommand) Exec(arguments []Argument) error {
+func (c *mySimpleCommand) Exec(arguments []string) error {
 	return nil
 }
 
@@ -44,7 +44,7 @@ func (c *myComplexCommand) SubCommands() CommandMap {
 	return c.subCommands
 }
 
-func (c *myComplexCommand) Exec(arguments []Argument) error {
+func (c *myComplexCommand) Exec(arguments []string) error {
 	return nil
 }
 

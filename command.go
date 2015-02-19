@@ -21,11 +21,9 @@ import (
 	"strings"
 )
 
-type Argument string
-
 type ShellCommand interface {
 	SubCommands() CommandMap
-	Exec([]Argument) error
+	Exec([]string) error
 }
 
 type CommandMap map[string]ShellCommand
@@ -53,8 +51,8 @@ func (commands CommandMap) AddCommand(commandName string, command ShellCommand) 
 	return nil
 }
 
-func (commands CommandMap) Find(arguments []Argument) (ShellCommand, []Argument, error) {
-	var argument Argument
+func (commands CommandMap) Find(arguments []string) (ShellCommand, []string, error) {
+	var argument string
 	var i int
 	var command ShellCommand
 
@@ -73,7 +71,7 @@ func (commands CommandMap) Find(arguments []Argument) (ShellCommand, []Argument,
 	return command, arguments[i+1:], nil
 }
 
-func (commands CommandMap) Exec(arguments []Argument) error {
+func (commands CommandMap) Exec(arguments []string) error {
 	command, arguments, err := commands.Find(arguments)
 
 	if err != nil {

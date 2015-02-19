@@ -23,14 +23,14 @@ import (
 
 type simpleCommand struct {
 	executed  bool
-	arguments []Argument
+	arguments []string
 }
 
 func (t *simpleCommand) SubCommands() CommandMap {
 	return nil
 }
 
-func (t *simpleCommand) Exec(arguments []Argument) error {
+func (t *simpleCommand) Exec(arguments []string) error {
 	t.executed = true
 	t.arguments = arguments
 	return nil
@@ -52,7 +52,7 @@ func (t *complexCommand) SubCommands() CommandMap {
 	}
 }
 
-func (t *complexCommand) Exec(arguments []Argument) error {
+func (t *complexCommand) Exec(arguments []string) error {
 	t.executed = true
 	return nil
 }
@@ -123,32 +123,25 @@ var _ = Describe("CommandMap", func() {
 		})
 
 		It("should return an error if no command is found", func() {
-			_, _, err := commands.Find([]Argument{Argument("cmd1")})
+			_, _, err := commands.Find([]string{"cmd1"})
 			Expect(err).To(MatchError("No matching command for [cmd1]"))
 		})
 
 		It("should return a matching command", func() {
-			execCmd, _, err := commands.Find([]Argument{Argument("cmd")})
+			execCmd, _, err := commands.Find([]string{"cmd"})
 			Expect(err).To(BeNil())
 			Expect(execCmd).To(Equal(cmd))
 		})
 
 		It("should return an empty argument slice when no arguments are given", func() {
-			_, arguments, _ := commands.Find([]Argument{Argument("cmd")})
-			Expect(arguments).To(Equal([]Argument{}))
+			_, arguments, _ := commands.Find([]string{"cmd"})
+			Expect(arguments).To(Equal([]string{}))
 		})
 
 		It("should return the arguments to the command when arguments are given", func() {
-			_, arguments, _ := commands.Find([]Argument{
-				Argument("cmd"),
-				Argument("arg1"),
-				Argument("arg2"),
-			})
+			_, arguments, _ := commands.Find([]string{"cmd", "arg1", "arg2"})
 
-			Expect(arguments).To(Equal([]Argument{
-				Argument("arg1"),
-				Argument("arg2"),
-			}))
+			Expect(arguments).To(Equal([]string{"arg1", "arg2"}))
 		})
 	})
 
@@ -163,42 +156,25 @@ var _ = Describe("CommandMap", func() {
 		})
 
 		It("should return an error for no matching sub-command", func() {
-			execCmd, _, err := commands.Find([]Argument{
-				Argument("tlc"),
-				Argument("subCmd3"),
-			})
+			execCmd, _, err := commands.Find([]string{"tlc", "subCmd3"})
 			Expect(err).To(MatchError("No matching command for [tlc subCmd3]"))
 			Expect(execCmd).To(BeNil())
 		})
 
 		It("should return the sub-command", func() {
-			execCmd, _, err := commands.Find([]Argument{
-				Argument("tlc"),
-				Argument("subCmd1"),
-			})
+			execCmd, _, err := commands.Find([]string{"tlc", "subCmd1"})
 			Expect(err).To(BeNil())
 			Expect(execCmd).To(Equal(tlc.subCommands["subCmd1"]))
 		})
 
 		It("should have an empty argument slice for no arguments", func() {
-			_, arguments, _ := commands.Find([]Argument{
-				Argument("tlc"),
-				Argument("subCmd1"),
-			})
-			Expect(arguments).To(Equal([]Argument{}))
+			_, arguments, _ := commands.Find([]string{"tlc", "subCmd1"})
+			Expect(arguments).To(Equal([]string{}))
 		})
 
 		It("should return the arguments when given", func() {
-			_, arguments, _ := commands.Find([]Argument{
-				Argument("tlc"),
-				Argument("subCmd1"),
-				Argument("arg1"),
-				Argument("arg2"),
-			})
-			Expect(arguments).To(Equal([]Argument{
-				Argument("arg1"),
-				Argument("arg2"),
-			}))
+			_, arguments, _ := commands.Find([]string{"tlc", "subCmd1", "arg1", "arg2"})
+			Expect(arguments).To(Equal([]string{"arg1", "arg2"}))
 		})
 	})
 
@@ -212,13 +188,13 @@ var _ = Describe("CommandMap", func() {
 		})
 
 		It("Should execute the command if found", func() {
-			err := commands.Exec([]Argument{Argument("cmd")})
+			err := commands.Exec([]string{"cmd"})
 			Expect(err).To(BeNil())
 			Expect(command.executed).To(BeTrue())
 		})
 
 		It("Shoud return an error if the command is not found", func() {
-			err := commands.Exec([]Argument{Argument("foo")})
+			err := commands.Exec([]string{"foo"})
 			Expect(err).To(MatchError("No matching command for [foo]"))
 		})
 	})

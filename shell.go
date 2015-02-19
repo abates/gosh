@@ -73,15 +73,6 @@ func (shell *Shell) SetStderr(stderr io.Writer) {
 	shell.stderr = stderr
 }
 
-func getArguments(line string) []Argument {
-	fields := strings.Fields(line)
-	arguments := make([]Argument, len(fields))
-	for i, field := range fields {
-		arguments[i] = Argument(field)
-	}
-	return arguments
-}
-
 func (shell *Shell) Exec() {
 	go func() {
 		for {
@@ -91,7 +82,7 @@ func (shell *Shell) Exec() {
 				continue
 			}
 
-			err = shell.commands.Exec(getArguments(input))
+			err = shell.commands.Exec(strings.Fields(input))
 
 			if err != nil {
 				fmt.Fprintf(shell.stderr, "%v\n", err)
