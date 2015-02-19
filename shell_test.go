@@ -1,18 +1,26 @@
 package gosh
 
 import (
+	"bufio"
+	"errors"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"io"
 )
 
 type testEditor struct {
 	prompts   chan string
 	responses chan string
+	err       error
 }
 
 func (t testEditor) Prompt(p string) (string, error) {
 	t.prompts <- p
-	return <-t.responses, nil
+	if t.err != nil {
+		return "", t.err
+	} else {
+		return <-t.responses, nil
+	}
 }
 
 func (t testEditor) sendResponse(response string) {
@@ -23,6 +31,7 @@ func newTestEditor() *testEditor {
 	return &testEditor{
 		make(chan string, 10),
 		make(chan string, 10),
+		nil,
 	}
 }
 
@@ -30,64 +39,74 @@ func (t testEditor) GetPrompt() string {
 	return "prompt> "
 }
 
+type errorCommand struct{}
+
+func (e errorCommand) SubCommands() CommandMap {
+	return nil
+}
+
+func (e errorCommand) Exec(arguments []Argument) error {
+	return errors.New("This command failed to execute")
+}
+
 var _ = Describe("Shell", func() {
-	var editor *testEditor
-	var shell *Shell
+	Describe("interaction", func() {
+		var editor *testEditor
+		var shell *Shell
+		var stderr, stdout *bufio.Reader
 
-	BeforeEach(func() {
-		editor = newTestEditor()
-
-		shell = NewShell(CommandMap{})
-		shell.SetLineEditor(editor)
-		shell.SetPrompter(editor)
-		shell.Exec()
-	})
-
-	Describe("The shell prompt", func() {
-		It("should display the prompt built from the prompter interface", func() {
-			Expect(<-editor.prompts).To(Equal("prompt> "))
-		})
-	})
-
-	Describe("Executing a multi-level command", func() {
-		var command *complexCommand
 		BeforeEach(func() {
-			command = newComplexCommand()
-			shell.AddCommand("cmd", command)
+			stderr_r, stderr_wr := io.Pipe()
+			stdout_r, stdout_wr := io.Pipe()
+			stderr = bufio.NewReader(stderr_r)
+			stdout = bufio.NewReader(stdout_r)
+
+			editor = newTestEditor()
+
+			shell = NewShell(CommandMap{
+				"error": errorCommand{},
+			})
+
+			shell.SetLineEditor(editor)
+			shell.SetStderr(stderr_wr)
+			shell.SetStdout(stdout_wr)
+			shell.Exec()
 		})
 
-		It("Should call the top level command if no sub commands are provided", func() {
-			editor.sendResponse("cmd\n")
-			<-editor.prompts
-			<-editor.prompts
-			Expect(command.executed).To(BeTrue())
-		})
+		Describe("The Default prompt", func() {
+			It("should display the default prompt", func() {
+				Expect(<-editor.prompts).To(Equal("> "))
+			})
 
-		It("Should call the next level command if a valid next-level command is provided", func() {
-			editor.sendResponse("cmd subCmd1\n")
-			<-editor.prompts
-			<-editor.prompts
-			Expect(command.executed).To(Equal(false))
-			Expect(command.subCommands["subCmd1"].executed).To(BeTrue())
-			Expect(command.subCommands["subCmd1"].arguments).To(Equal([]Argument{}))
-		})
+			It("Should display the prompt from a customized prompter", func() {
+				shell.SetPrompter(editor)
+				Expect(<-editor.prompts).To(Equal("prompt> "))
+			})
 
-		It("Should provide an additional argument to the next level command when given", func() {
-			editor.sendResponse("cmd subCmd1 arg1\n")
-			<-editor.prompts
-			<-editor.prompts
-			Expect(command.executed).To(Equal(false))
-			Expect(command.subCommands["subCmd1"].executed).To(BeTrue())
-			Expect(command.subCommands["subCmd1"].arguments).To(Equal([]Argument{Argument("arg1")}))
-		})
+			It("should print an error if the prompt encounters an error", func() {
+				errorString := "You can't eat, I have no cheeseburgers!"
+				editor.err = errors.New(errorString)
+				editor.responses <- "eat\n"
+				line, _, _ := stderr.ReadLine()
+				Expect(string(line)).To(Equal(errorString))
+			})
 
-		It("Should provide all additional arguments to the next level command when given", func() {
-			editor.sendResponse("cmd subCmd1 arg1 arg2\n")
-			<-editor.prompts
-			<-editor.prompts
-			Expect(command.subCommands["subCmd1"].arguments).To(Equal([]Argument{
+			It("should print an error if the command returns an error", func() {
+				editor.responses <- "error\n"
+				line, _, _ := stderr.ReadLine()
+				Expect(string(line)).To(Equal("This command failed to execute"))
+			})
+		})
+	})
+
+	Describe("parsing the line into arguments", func() {
+		It("Should parse a line into fields and convert them into an array of Argument", func() {
+			args := getArguments("cmd arg1 arg2 arg3")
+			Expect(args).To(Equal([]Argument{
+				Argument("cmd"),
 				Argument("arg1"),
 				Argument("arg2"),
+				Argument("arg3"),
 			}))
 		})
 	})

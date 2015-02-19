@@ -2,6 +2,7 @@ package gosh
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"strings"
 )
@@ -9,6 +10,8 @@ import (
 type Shell struct {
 	lineEditor LineEditor
 	prompter   Prompter
+	stderr     io.Writer
+	stdout     io.Writer
 	commands   CommandMap
 	completer  Completer
 }
@@ -16,7 +19,9 @@ type Shell struct {
 func NewShell(commands CommandMap) *Shell {
 	return &Shell{
 		nil,
-		nil,
+		DefaultPrompter{},
+		os.Stderr,
+		os.Stdout,
 		commands,
 		*NewCompleter(commands),
 	}
@@ -30,6 +35,12 @@ type Prompter interface {
 	GetPrompt() string
 }
 
+type DefaultPrompter struct{}
+
+func (p DefaultPrompter) GetPrompt() string {
+	return "> "
+}
+
 func (shell *Shell) SetLineEditor(lineEditor LineEditor) {
 	shell.lineEditor = lineEditor
 }
@@ -38,8 +49,21 @@ func (shell *Shell) SetPrompter(prompter Prompter) {
 	shell.prompter = prompter
 }
 
-func (shell *Shell) AddCommand(commandName string, command ShellCommand) error {
-	return shell.commands.AddCommand(commandName, command)
+func (shell *Shell) SetStdout(stdout io.Writer) {
+	shell.stdout = stdout
+}
+
+func (shell *Shell) SetStderr(stderr io.Writer) {
+	shell.stderr = stderr
+}
+
+func getArguments(line string) []Argument {
+	fields := strings.Fields(line)
+	arguments := make([]Argument, len(fields))
+	for i, field := range fields {
+		arguments[i] = Argument(field)
+	}
+	return arguments
 }
 
 func (shell *Shell) Exec() {
@@ -47,20 +71,14 @@ func (shell *Shell) Exec() {
 		for {
 			input, err := shell.lineEditor.Prompt(shell.prompter.GetPrompt())
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "Failed to read from prompt: %v", err)
+				fmt.Fprintf(shell.stderr, "%v\n", err)
 				continue
 			}
 
-			fields := strings.Fields(input)
-			arguments := make([]Argument, len(fields))
-			for i, field := range fields {
-				arguments[i] = Argument(field)
-			}
-
-			err = shell.commands.Exec(arguments)
+			err = shell.commands.Exec(getArguments(input))
 
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "%v", err)
+				fmt.Fprintf(shell.stderr, "%v\n", err)
 			}
 		}
 	}()
