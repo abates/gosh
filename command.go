@@ -21,12 +21,12 @@ import (
 	"strings"
 )
 
-type ShellCommand interface {
+type Command interface {
 	SubCommands() CommandMap
 	Exec([]string) error
 }
 
-type CommandMap map[string]ShellCommand
+type CommandMap map[string]Command
 type CommandError string
 
 func (c CommandError) Error() string {
@@ -43,7 +43,7 @@ func (commands CommandMap) getCompletions(field string) CommandMap {
 	return completions
 }
 
-func (commands CommandMap) AddCommand(commandName string, command ShellCommand) error {
+func (commands CommandMap) AddCommand(commandName string, command Command) error {
 	if _, ok := commands[commandName]; ok {
 		return CommandError(fmt.Sprintf("Command %s is already a top level command", commandName))
 	}
@@ -51,10 +51,10 @@ func (commands CommandMap) AddCommand(commandName string, command ShellCommand) 
 	return nil
 }
 
-func (commands CommandMap) Find(arguments []string) (ShellCommand, []string, error) {
+func (commands CommandMap) Find(arguments []string) (Command, []string, error) {
 	var argument string
 	var i int
-	var command ShellCommand
+	var command Command
 
 	for i, argument = range arguments {
 		nextCommand := commands[string(argument)]
