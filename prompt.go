@@ -10,8 +10,10 @@ type Prompt interface {
 	NextResponse() (string, error)
 }
 
+type Prompter func() string
+
 type DefaultPrompt struct {
-	prompter   func() string
+	prompter   Prompter
 	lineEditor LineEditor
 	commands   CommandMap
 }

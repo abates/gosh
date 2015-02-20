@@ -11,7 +11,7 @@ type testLineEditor struct {
 	closeCalled bool
 }
 
-func (t *testLineEditor) Prompt(string) (string, error) { return "", nil }
+func (t *testLineEditor) Prompt(string) (string, error) { return "response", errors.New("OK") }
 func (t *testLineEditor) Close() error {
 	t.closeCalled = true
 	if t.closeError {
@@ -89,6 +89,16 @@ var _ = Describe("DefaultPrompt", func() {
 			prompt.SetLineEditor(&nonCloseableLineEditor{})
 			err := prompt.Close()
 			Expect(err).To(BeNil())
+		})
+	})
+
+	Describe("getting a response", func() {
+		It("should return a response captured from LineEditor.Prompt", func() {
+			lineEditor := &testLineEditor{false, false}
+			prompt.SetLineEditor(lineEditor)
+			response, err := prompt.NextResponse()
+			Expect(err).To(MatchError("OK"))
+			Expect(response).To(Equal("response"))
 		})
 	})
 })
