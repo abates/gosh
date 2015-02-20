@@ -23,7 +23,7 @@ import (
 
 type mySimpleCommand struct{}
 
-func (c *mySimpleCommand) SubCommands() CommandMap {
+func (c *mySimpleCommand) Completions() []string {
 	return nil
 }
 
@@ -33,23 +33,6 @@ func (c *mySimpleCommand) Exec(arguments []string) error {
 
 func NewSimpleCommand() *mySimpleCommand {
 	return &mySimpleCommand{}
-}
-
-type myComplexCommand struct {
-	*mySimpleCommand
-	subCommands CommandMap
-}
-
-func (c *myComplexCommand) SubCommands() CommandMap {
-	return c.subCommands
-}
-
-func (c *myComplexCommand) Exec(arguments []string) error {
-	return nil
-}
-
-func NewComplexCommand(subCommands CommandMap) *myComplexCommand {
-	return &myComplexCommand{NewSimpleCommand(), subCommands}
 }
 
 var _ = Describe("Gosh", func() {
@@ -79,7 +62,7 @@ var _ = Describe("Gosh", func() {
 		var completer *Completer
 		BeforeEach(func() {
 			completer = NewCompleter(CommandMap{
-				"john": NewComplexCommand(CommandMap{
+				"john": NewTreeCommand(CommandMap{
 					"jacob":        NewSimpleCommand(),
 					"jingleheimer": NewSimpleCommand(),
 					"schmidt":      NewSimpleCommand(),
