@@ -54,7 +54,15 @@ func (completer Completer) Complete(line string) (c []string) {
 			 */
 			if field == completion {
 				prefix = prefix + completion + " "
-				commands = command.SubCommands()
+				if command, ok := command.(TreeCommand); ok {
+					commands = command.SubCommands()
+				} else {
+					completions := command.Completions()
+					commands = make(CommandMap, len(completions))
+					for _, completion := range completions {
+						commands[completion] = command
+					}
+				}
 				break
 			} else {
 				c = append(c, prefix+completion)
