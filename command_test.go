@@ -77,8 +77,7 @@ var _ = Describe("CommandMap", func() {
 
 		Describe("AddCommand", func() {
 			It("Should add a new command to the map", func() {
-				err := commands.AddCommand("rita", nil)
-				Expect(err).To(BeNil())
+				Expect(commands.AddCommand("rita", nil)).To(Succeed())
 				Expect(commands.getCompletions("")).To(Equal(CommandMap{
 					"john":  nil,
 					"james": nil,
@@ -172,8 +171,7 @@ var _ = Describe("CommandMap", func() {
 		})
 
 		It("Should execute the command if found", func() {
-			err := commands.Exec([]string{"cmd"})
-			Expect(err).To(BeNil())
+			Expect(commands.Exec([]string{"cmd"})).To(Succeed())
 			Expect(command.executed).To(BeTrue())
 		})
 
