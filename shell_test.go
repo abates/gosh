@@ -17,21 +17,17 @@
 package gosh
 
 import (
-	"bufio"
 	"errors"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"io"
 )
 
-type testEditor struct {
-	prompts   chan string
+type testPrompt struct {
 	responses chan string
 	err       error
 }
 
-func (t testEditor) Prompt(p string) (string, error) {
-	t.prompts <- p
+func (t testPrompt) NextResponse() (string, error) {
 	if t.err != nil {
 		return "", t.err
 	} else {
@@ -39,25 +35,20 @@ func (t testEditor) Prompt(p string) (string, error) {
 	}
 }
 
-func (t testEditor) sendResponse(response string) {
+func (t testPrompt) sendResponse(response string) {
 	t.responses <- response
 }
 
-func newTestEditor() *testEditor {
-	return &testEditor{
-		make(chan string, 10),
+func newTestPrompt() *testPrompt {
+	return &testPrompt{
 		make(chan string, 10),
 		nil,
 	}
 }
 
-func (t testEditor) GetPrompt() string {
-	return "prompt> "
-}
-
 type errorCommand struct{}
 
-func (e errorCommand) SubCommands() CommandMap {
+func (e errorCommand) Completions() []string {
 	return nil
 }
 
@@ -66,52 +57,71 @@ func (e errorCommand) Exec(arguments []string) error {
 }
 
 var _ = Describe("Shell", func() {
+	var shell *Shell
+	BeforeEach(func() {
+		shell = NewShell(CommandMap{})
+	})
+
+	Describe("the prompt", func() {
+		It("Should use DefaultPrompt", func() {
+			Expect(shell.prompt).To(BeAssignableToTypeOf(&DefaultPrompt{}))
+		})
+
+		It("Should allow overriding the default prompt", func() {
+			tp := newTestPrompt()
+			err := shell.SetPrompt(tp)
+			Expect(err).To(BeNil())
+			Expect(shell.prompt).To(Equal(tp))
+		})
+
+		It("Should prohibit setting a nil prompt", func() {
+			oldPrompt := shell.prompt
+			err := shell.SetPrompt(nil)
+			Expect(err).To(MatchError(ErrNilPrompt))
+			Expect(shell.prompt).To(Equal(oldPrompt))
+		})
+	})
+
 	Describe("interaction", func() {
-		var editor *testEditor
+		var prompt *testPrompt
 		var shell *Shell
-		var stderr, stdout *bufio.Reader
 
 		BeforeEach(func() {
-			stderr_r, stderr_wr := io.Pipe()
-			stdout_r, stdout_wr := io.Pipe()
-			stderr = bufio.NewReader(stderr_r)
-			stdout = bufio.NewReader(stdout_r)
-
-			editor = newTestEditor()
+			prompt = newTestPrompt()
 
 			shell = NewShell(CommandMap{
 				"error": errorCommand{},
 			})
 
-			shell.SetLineEditor(editor)
-			shell.SetStderr(stderr_wr)
-			shell.SetStdout(stdout_wr)
-			shell.Exec()
+			shell.SetPrompt(prompt)
+			go shell.Exec()
 		})
 
-		Describe("The Default prompt", func() {
+		/*Describe("The Default prompt", func() {
 			It("should display the default prompt", func() {
-				Expect(<-editor.prompts).To(Equal("> "))
+				Expect(<-prompt.prompts).To(Equal("> "))
 			})
 
 			It("Should display the prompt from a customized prompter", func() {
-				shell.SetPrompter(editor)
-				Expect(<-editor.prompts).To(Equal("prompt> "))
+				shell.Prompt.SetPrompter(func() {
+					return "prompt> "
+				})
+				Expect(<-prompt.prompts).To(Equal("prompt> "))
 			})
 
 			It("should print an error if the prompt encounters an error", func() {
 				errorString := "You can't eat, I have no cheeseburgers!"
-				editor.err = errors.New(errorString)
-				editor.responses <- "eat\n"
+				prompt.err = errors.New(errorString)
+				prompt.responses <- "eat\n"
 				line, _, _ := stderr.ReadLine()
 				Expect(string(line)).To(Equal(errorString))
 			})
 
 			It("should print an error if the command returns an error", func() {
-				editor.responses <- "error\n"
+				prompt.responses <- "error\n"
 				line, _, _ := stderr.ReadLine()
 				Expect(string(line)).To(Equal("This command failed to execute"))
 			})
-		})
+		})*/
 	})
 })

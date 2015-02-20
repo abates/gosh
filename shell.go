@@ -24,69 +24,46 @@ import (
 )
 
 type Shell struct {
-	lineEditor LineEditor
-	prompter   Prompter
-	stderr     io.Writer
-	stdout     io.Writer
-	commands   CommandMap
-	completer  Completer
+	prompt   Prompt
+	commands CommandMap
+}
+
+func (s *Shell) SetPrompt(prompt Prompt) error {
+	if prompt == nil {
+		return ErrNilPrompt
+	}
+	s.prompt = prompt
+	return nil
 }
 
 func NewShell(commands CommandMap) *Shell {
 	return &Shell{
-		nil,
-		DefaultPrompter{},
-		os.Stderr,
-		os.Stdout,
+		NewDefaultPrompt(commands),
 		commands,
-		*NewCompleter(commands),
 	}
 }
 
-type LineEditor interface {
-	Prompt(string) (string, error)
-}
-
-type Prompter interface {
-	GetPrompt() string
-}
-
-type DefaultPrompter struct{}
-
-func (p DefaultPrompter) GetPrompt() string {
-	return "> "
-}
-
-func (shell *Shell) SetLineEditor(lineEditor LineEditor) {
-	shell.lineEditor = lineEditor
-}
-
-func (shell *Shell) SetPrompter(prompter Prompter) {
-	shell.prompter = prompter
-}
-
-func (shell *Shell) SetStdout(stdout io.Writer) {
-	shell.stdout = stdout
-}
-
-func (shell *Shell) SetStderr(stderr io.Writer) {
-	shell.stderr = stderr
-}
-
 func (shell *Shell) Exec() {
-	go func() {
-		for {
-			input, err := shell.lineEditor.Prompt(shell.prompter.GetPrompt())
-			if err != nil {
-				fmt.Fprintf(shell.stderr, "%v\n", err)
-				continue
-			}
+	if prompt, ok := shell.prompt.(*DefaultPrompt); ok {
+		defer prompt.Close()
+	}
 
-			err = shell.commands.Exec(strings.Fields(input))
+	for {
+		input, err := shell.prompt.NextResponse()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			fmt.Fprintf(os.Stderr, "%v\n", err)
+			continue
+		}
+
+		fields := strings.Fields(input)
+		if len(fields) > 0 {
+			err = shell.commands.Exec(fields)
 
 			if err != nil {
-				fmt.Fprintf(shell.stderr, "%v\n", err)
+				fmt.Fprintf(os.Stderr, "%v\n", err)
 			}
 		}
-	}()
+	}
 }
