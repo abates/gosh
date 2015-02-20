@@ -26,7 +26,7 @@ type simpleCommand struct {
 	arguments []string
 }
 
-func (t *simpleCommand) Completions(CompletionInfo) []string {
+func (t *simpleCommand) Completions() []string {
 	return nil
 }
 

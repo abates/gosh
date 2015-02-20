@@ -25,7 +25,7 @@ type TreeCommand struct {
 	completions []string
 }
 
-func (t TreeCommand) Completions(CompletionInfo) []string {
+func (t TreeCommand) Completions() []string {
 	return t.completions
 }
 
@@ -53,7 +53,7 @@ func NewTreeCommand(commands CommandMap) TreeCommand {
 
 type Command interface {
 	Exec([]string) error
-	Completions(CompletionInfo) []string
+	Completions() []string
 }
 
 type CommandMap map[string]Command
