@@ -42,10 +42,8 @@ var _ = Describe("DefaultPrompt", func() {
 		})
 
 		It("Should not allow setting a nil prompter", func() {
-			oldPrompter := prompt.prompter
 			err := prompt.SetPrompter(nil)
 			Expect(err).To(MatchError(ErrNilCallback))
-			Expect(prompt.prompter).To(Equal(oldPrompter))
 		})
 
 	})
