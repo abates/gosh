@@ -26,7 +26,7 @@ type simpleCommand struct {
 	arguments []string
 }
 
-func (t *simpleCommand) SubCommands() CommandMap {
+func (t *simpleCommand) Completions(CompletionInfo) []string {
 	return nil
 }
 
@@ -40,24 +40,7 @@ func newSimpleCommand() *simpleCommand {
 	return &simpleCommand{false, nil}
 }
 
-type complexCommand struct {
-	subCommands map[string]*simpleCommand
-	executed    bool
-}
-
-func (t *complexCommand) SubCommands() CommandMap {
-	return CommandMap{
-		"subCmd1": t.subCommands["subCmd1"],
-		"subCmd2": t.subCommands["subCmd2"],
-	}
-}
-
-func (t *complexCommand) Exec(arguments []string) error {
-	t.executed = true
-	return nil
-}
-
-func newComplexCommand() *complexCommand {
+/*func newComplexCommand() *complexCommand {
 	return &complexCommand{
 		map[string]*simpleCommand{
 			"subCmd1": newSimpleCommand(),
@@ -65,7 +48,7 @@ func newComplexCommand() *complexCommand {
 		},
 		false,
 	}
-}
+}*/
 
 var _ = Describe("CommandMap", func() {
 	Describe("functions", func() {
@@ -107,7 +90,7 @@ var _ = Describe("CommandMap", func() {
 
 			It("Should return an error instead of adding a duplicate command", func() {
 				err := commands.AddCommand("john", nil)
-				Expect(err).To(MatchError("Command john is already a top level command"))
+				Expect(err).To(MatchError(ErrDuplicateCommand))
 			})
 		})
 	})
@@ -124,7 +107,7 @@ var _ = Describe("CommandMap", func() {
 
 		It("should return an error if no command is found", func() {
 			_, _, err := commands.Find([]string{"cmd1"})
-			Expect(err).To(MatchError("No matching command for [cmd1]"))
+			Expect(err).To(MatchError(ErrNoMatchingCommand))
 		})
 
 		It("should return a matching command", func() {
@@ -147,17 +130,18 @@ var _ = Describe("CommandMap", func() {
 
 	Describe("Finding a sub-command", func() {
 		var commands CommandMap
-		var tlc *complexCommand
+		var tlc TreeCommand
 		BeforeEach(func() {
-			tlc = newComplexCommand()
-			commands = CommandMap{
-				"tlc": tlc,
-			}
+			tlc = NewTreeCommand(CommandMap{
+				"subCmd1": newSimpleCommand(),
+				"subCmd2": newSimpleCommand(),
+			})
+			commands = CommandMap{"tlc": tlc}
 		})
 
 		It("should return an error for no matching sub-command", func() {
 			execCmd, _, err := commands.Find([]string{"tlc", "subCmd3"})
-			Expect(err).To(MatchError("No matching command for [tlc subCmd3]"))
+			Expect(err).To(MatchError(ErrNoMatchingCommand))
 			Expect(execCmd).To(BeNil())
 		})
 
@@ -195,7 +179,7 @@ var _ = Describe("CommandMap", func() {
 
 		It("Shoud return an error if the command is not found", func() {
 			err := commands.Exec([]string{"foo"})
-			Expect(err).To(MatchError("No matching command for [foo]"))
+			Expect(err).To(MatchError(ErrNoMatchingCommand))
 		})
 	})
 })

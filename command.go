@@ -17,21 +17,46 @@
 package gosh
 
 import (
-	"fmt"
 	"strings"
 )
 
+type TreeCommand struct {
+	subCommands CommandMap
+	completions []string
+}
+
+func (t TreeCommand) Completions(CompletionInfo) []string {
+	return t.completions
+}
+
+func (t TreeCommand) SubCommands() CommandMap {
+	return t.subCommands
+}
+
+func (t TreeCommand) Exec([]string) error {
+	return nil
+}
+
+func NewTreeCommand(commands CommandMap) TreeCommand {
+	tree := TreeCommand{
+		subCommands: commands,
+		completions: make([]string, len(commands)),
+	}
+
+	i := 0
+	for commandName, _ := range commands {
+		tree.completions[i] = commandName
+		i += 1
+	}
+	return tree
+}
+
 type Command interface {
-	SubCommands() CommandMap
 	Exec([]string) error
+	Completions(CompletionInfo) []string
 }
 
 type CommandMap map[string]Command
-type CommandError string
-
-func (c CommandError) Error() string {
-	return string(c)
-}
 
 func (commands CommandMap) getCompletions(field string) CommandMap {
 	completions := make(CommandMap)
@@ -45,7 +70,7 @@ func (commands CommandMap) getCompletions(field string) CommandMap {
 
 func (commands CommandMap) AddCommand(commandName string, command Command) error {
 	if _, ok := commands[commandName]; ok {
-		return CommandError(fmt.Sprintf("Command %s is already a top level command", commandName))
+		return ErrDuplicateCommand
 	}
 	commands[commandName] = command
 	return nil
@@ -57,13 +82,17 @@ func (commands CommandMap) Find(arguments []string) (Command, []string, error) {
 	var command Command
 
 	for i, argument = range arguments {
-		nextCommand := commands[string(argument)]
+		nextCommand := commands[argument]
 		if nextCommand == nil {
-			return nil, nil, CommandError(fmt.Sprintf("No matching command for %v", arguments))
+			return nil, nil, ErrNoMatchingCommand
 		} else {
 			command = nextCommand
-			commands = nextCommand.SubCommands()
-			if len(commands) == 0 {
+			if nextCommand, ok := nextCommand.(TreeCommand); ok {
+				commands = nextCommand.SubCommands()
+				if len(commands) == 0 {
+					break
+				}
+			} else {
 				break
 			}
 		}
