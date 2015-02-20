@@ -6,23 +6,30 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-type testLineEditor struct {
-	closeError  bool
+type testPrompt struct {
+	responses   chan string
+	lineEditor  *testLineEditor
+	closeErr    error
 	closeCalled bool
 }
 
-func (t *testLineEditor) Prompt(string) (string, error) { return "response", errors.New("OK") }
-func (t *testLineEditor) Close() error {
-	t.closeCalled = true
-	if t.closeError {
-		return errors.New("Close error")
-	}
-	return nil
+func (t *testPrompt) NextResponse() (string, error) {
+	return t.lineEditor.Prompt("")
 }
 
-type nonCloseableLineEditor struct{}
+func (t *testPrompt) Close() error {
+	t.closeCalled = true
+	return t.closeErr
+}
 
-func (t *nonCloseableLineEditor) Prompt(string) (string, error) { return "", nil }
+func newTestPrompt() *testPrompt {
+	return &testPrompt{
+		make(chan string, 10),
+		newTestLineEditor(),
+		nil,
+		false,
+	}
+}
 
 var _ = Describe("DefaultPrompt", func() {
 	var prompt *DefaultPrompt
@@ -36,9 +43,8 @@ var _ = Describe("DefaultPrompt", func() {
 		})
 
 		It("Should allow overriding the default prompter", func() {
-			err := prompt.SetPrompter(func() string { return "custom prompt> " })
+			Expect(prompt.SetPrompter(func() string { return "custom prompt> " })).To(Succeed())
 			Expect(prompt.prompter()).To(Equal("custom prompt> "))
-			Expect(err).To(BeNil())
 		})
 
 		It("Should not allow setting a nil prompter", func() {
@@ -54,8 +60,7 @@ var _ = Describe("DefaultPrompt", func() {
 		})
 
 		It("Should allow overriding the default line editor", func() {
-			err := prompt.SetLineEditor(&testLineEditor{})
-			Expect(err).To(BeNil())
+			Expect(prompt.SetLineEditor(newTestLineEditor())).To(Succeed())
 		})
 
 		It("Should not allow setting the line editor to nil", func() {
@@ -69,32 +74,33 @@ var _ = Describe("DefaultPrompt", func() {
 	Describe("Closing the prompt", func() {
 		var lineEditor *testLineEditor
 		BeforeEach(func() {
-			lineEditor = &testLineEditor{false, false}
+			lineEditor = newTestLineEditor()
 			prompt.SetLineEditor(lineEditor)
 		})
 
 		It("Should be able to close a closeable line editor", func() {
-			err := prompt.Close()
-			Expect(err).To(BeNil())
+			Expect(prompt.Close()).To(Succeed())
 			Expect(lineEditor.closeCalled).To(BeTrue())
 		})
 
 		It("Should return an error when closing the line editor returns an error", func() {
-			lineEditor.closeError = true
+			lineEditor.err = errors.New("Close error")
 			err := prompt.Close()
 			Expect(err).To(MatchError("Close error"))
 		})
 
 		It("Should return nil when closing and the line editor is not closeable", func() {
 			prompt.SetLineEditor(&nonCloseableLineEditor{})
-			err := prompt.Close()
-			Expect(err).To(BeNil())
+			Expect(prompt.Close()).To(Succeed())
 		})
 	})
 
 	Describe("getting a response", func() {
 		It("should return a response captured from LineEditor.Prompt", func() {
-			lineEditor := &testLineEditor{false, false}
+			lineEditor := newTestLineEditor()
+			lineEditor.response = "response"
+			lineEditor.err = errors.New("OK")
+
 			prompt.SetLineEditor(lineEditor)
 			response, err := prompt.NextResponse()
 			Expect(err).To(MatchError("OK"))
