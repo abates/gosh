@@ -24,6 +24,7 @@ import (
 type testCommand struct {
 	executed  bool
 	arguments []string
+	execErr   error
 }
 
 func (t *testCommand) Completions() []string {
@@ -33,11 +34,11 @@ func (t *testCommand) Completions() []string {
 func (t *testCommand) Exec(arguments []string) error {
 	t.executed = true
 	t.arguments = arguments
-	return nil
+	return t.execErr
 }
 
 func newTestCommand() *testCommand {
-	return &testCommand{false, nil}
+	return &testCommand{false, nil, nil}
 }
 
 var _ = Describe("CommandMap", func() {
