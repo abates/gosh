@@ -24,8 +24,9 @@ import (
 )
 
 type Shell struct {
-	prompt   Prompt
-	commands CommandMap
+	prompt      Prompt
+	commands    CommandMap
+	errorWriter io.Writer
 }
 
 func (s *Shell) SetPrompt(prompt Prompt) error {
@@ -36,24 +37,34 @@ func (s *Shell) SetPrompt(prompt Prompt) error {
 	return nil
 }
 
+func (s *Shell) SetErrorWriter(writer io.Writer) error {
+	if writer == nil {
+		return ErrNilWriter
+	}
+	s.errorWriter = writer
+	return nil
+}
+
 func NewShell(commands CommandMap) *Shell {
 	return &Shell{
-		NewDefaultPrompt(commands),
-		commands,
+		prompt:      NewDefaultPrompt(commands),
+		commands:    commands,
+		errorWriter: os.Stderr,
 	}
 }
 
 func (shell *Shell) Exec() {
-	if prompt, ok := shell.prompt.(*DefaultPrompt); ok {
+	if prompt, ok := shell.prompt.(Closeable); ok {
 		defer prompt.Close()
 	}
 
 	for {
 		input, err := shell.prompt.NextResponse()
+
 		if err == io.EOF {
 			break
 		} else if err != nil {
-			fmt.Fprintf(os.Stderr, "%v\n", err)
+			fmt.Fprintf(shell.errorWriter, "%v\n", err)
 			continue
 		}
 
@@ -62,7 +73,7 @@ func (shell *Shell) Exec() {
 			err = shell.commands.Exec(fields)
 
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "%v\n", err)
+				fmt.Fprintf(shell.errorWriter, "%v\n", err)
 			}
 		}
 	}

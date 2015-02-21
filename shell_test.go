@@ -17,34 +17,13 @@
 package gosh
 
 import (
+	"bufio"
 	"errors"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"io"
+	"os"
 )
-
-type testPrompt struct {
-	responses chan string
-	err       error
-}
-
-func (t testPrompt) NextResponse() (string, error) {
-	if t.err != nil {
-		return "", t.err
-	} else {
-		return <-t.responses, nil
-	}
-}
-
-func (t testPrompt) sendResponse(response string) {
-	t.responses <- response
-}
-
-func newTestPrompt() *testPrompt {
-	return &testPrompt{
-		make(chan string, 10),
-		nil,
-	}
-}
 
 type errorCommand struct{}
 
@@ -58,8 +37,10 @@ func (e errorCommand) Exec(arguments []string) error {
 
 var _ = Describe("Shell", func() {
 	var shell *Shell
+	var commands CommandMap
 	BeforeEach(func() {
-		shell = NewShell(CommandMap{})
+		commands = CommandMap{}
+		shell = NewShell(commands)
 	})
 
 	Describe("the prompt", func() {
@@ -69,8 +50,7 @@ var _ = Describe("Shell", func() {
 
 		It("Should allow overriding the default prompt", func() {
 			tp := newTestPrompt()
-			err := shell.SetPrompt(tp)
-			Expect(err).To(BeNil())
+			Expect(shell.SetPrompt(tp)).To(Succeed())
 			Expect(shell.prompt).To(Equal(tp))
 		})
 
@@ -82,46 +62,84 @@ var _ = Describe("Shell", func() {
 		})
 	})
 
-	Describe("interaction", func() {
+	Describe("errors", func() {
+		It("Should use os.Stderr by default", func() {
+			Expect(shell.errorWriter).To(Equal(os.Stderr))
+		})
+
+		It("Should allow overriding the error writer", func() {
+			_, pwr := io.Pipe()
+			Expect(shell.SetErrorWriter(pwr)).To(Succeed())
+			Expect(shell.errorWriter).To(Equal(pwr))
+		})
+
+		It("Should prohibit setting the error writer to nil", func() {
+			Expect(shell.SetErrorWriter(nil)).To(MatchError("Cannot assign a nil writer"))
+			Expect(shell.errorWriter).To(Equal(os.Stderr))
+		})
+	})
+
+	Describe("Exec", func() {
 		var prompt *testPrompt
-		var shell *Shell
+		var stderr *bufio.Reader
 
 		BeforeEach(func() {
 			prompt = newTestPrompt()
-
-			shell = NewShell(CommandMap{
-				"error": errorCommand{},
-			})
-
 			shell.SetPrompt(prompt)
-			go shell.Exec()
+			stderr_r, stderr_wr, _ := os.Pipe()
+			stderr = bufio.NewReader(stderr_r)
+			shell.SetErrorWriter(stderr_wr)
 		})
 
-		/*Describe("The Default prompt", func() {
-			It("should display the default prompt", func() {
-				Expect(<-prompt.prompts).To(Equal("> "))
+		It("Should always call Close() on closeable prompts when exiting", func() {
+			prompt.lineEditor.response <- testResponse{
+				"",
+				io.EOF,
+			}
+			shell.Exec()
+			Expect(prompt.closeCalled).To(BeTrue())
+		})
+
+		It("Should display an error if the prompt returns an error", func() {
+			prompt.lineEditor.addResponse("", errors.New("Prompt Error"))
+			prompt.lineEditor.addResponse("", io.EOF)
+			shell.Exec()
+			line, _, _ := stderr.ReadLine()
+			Expect(string(line)).To(Equal("Prompt Error"))
+		})
+
+		Describe("executing a command", func() {
+			var command *testCommand
+
+			BeforeEach(func() {
+				command = newTestCommand()
+				commands.Add("test", command)
 			})
 
-			It("Should display the prompt from a customized prompter", func() {
-				shell.Prompt.SetPrompter(func() {
-					return "prompt> "
-				})
-				Expect(<-prompt.prompts).To(Equal("prompt> "))
+			It("Should execute a command with no arguments", func() {
+				prompt.lineEditor.addResponse("test", nil)
+				prompt.lineEditor.addResponse("", io.EOF)
+				shell.Exec()
+				Expect(command.executed).To(BeTrue())
+				Expect(command.arguments).To(Equal([]string{}))
 			})
 
-			It("should print an error if the prompt encounters an error", func() {
-				errorString := "You can't eat, I have no cheeseburgers!"
-				prompt.err = errors.New(errorString)
-				prompt.responses <- "eat\n"
+			It("Should execute a command with some arguments", func() {
+				prompt.lineEditor.addResponse("test arg1 arg2", nil)
+				prompt.lineEditor.end()
+				shell.Exec()
+				Expect(command.executed).To(BeTrue())
+				Expect(command.arguments).To(Equal([]string{"arg1", "arg2"}))
+			})
+
+			It("Should display an error if the command execution fails", func() {
+				command.execErr = errors.New("command error")
+				prompt.lineEditor.addResponse("test", nil)
+				prompt.lineEditor.end()
+				shell.Exec()
 				line, _, _ := stderr.ReadLine()
-				Expect(string(line)).To(Equal(errorString))
+				Expect(string(line)).To(Equal("command error"))
 			})
-
-			It("should print an error if the command returns an error", func() {
-				prompt.responses <- "error\n"
-				line, _, _ := stderr.ReadLine()
-				Expect(string(line)).To(Equal("This command failed to execute"))
-			})
-		})*/
+		})
 	})
 })
