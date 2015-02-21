@@ -22,13 +22,14 @@ import (
 )
 
 type testCommand struct {
-	executed  bool
-	arguments []string
-	execErr   error
+	completions []string
+	executed    bool
+	arguments   []string
+	execErr     error
 }
 
 func (t *testCommand) Completions() []string {
-	return nil
+	return t.completions
 }
 
 func (t *testCommand) Exec(arguments []string) error {
@@ -37,62 +38,61 @@ func (t *testCommand) Exec(arguments []string) error {
 	return t.execErr
 }
 
+func (t *testCommand) setCompletions(completions []string) {
+	t.completions = completions
+}
+
 func newTestCommand() *testCommand {
-	return &testCommand{false, nil, nil}
+	return &testCommand{nil, false, nil, nil}
 }
 
 var _ = Describe("CommandMap", func() {
-	Describe("functions", func() {
-		var commands CommandMap
-		BeforeEach(func() {
-			commands = CommandMap{
+	var commands CommandMap
+	BeforeEach(func() {
+		commands = CommandMap{
+			"john":  nil,
+			"james": nil,
+			"mary":  nil,
+			"nancy": nil,
+		}
+	})
+
+	Describe("getCompletions", func() {
+		It("should return a CommandMap of all the commands when the field is blank", func() {
+			Expect(commands.getCompletions("")).To(Equal(commands))
+		})
+
+		It("should return only those commands with matching prefixes", func() {
+			Expect(commands.getCompletions("j")).To(Equal(CommandMap{
+				"john":  nil,
+				"james": nil,
+			}))
+		})
+	})
+
+	Describe("Add", func() {
+		It("Should add a new command to the map", func() {
+			Expect(commands.Add("rita", nil)).To(Succeed())
+			Expect(commands.getCompletions("")).To(Equal(CommandMap{
 				"john":  nil,
 				"james": nil,
 				"mary":  nil,
 				"nancy": nil,
-			}
+				"rita":  nil,
+			}))
 		})
 
-		Describe("getCompletions", func() {
-			It("should return a CommandMap of all the commands when the field is blank", func() {
-				Expect(commands.getCompletions("")).To(Equal(commands))
-			})
-
-			It("should return only those commands with matching prefixes", func() {
-				Expect(commands.getCompletions("j")).To(Equal(CommandMap{
-					"john":  nil,
-					"james": nil,
-				}))
-			})
-		})
-
-		Describe("Add", func() {
-			It("Should add a new command to the map", func() {
-				Expect(commands.Add("rita", nil)).To(Succeed())
-				Expect(commands.getCompletions("")).To(Equal(CommandMap{
-					"john":  nil,
-					"james": nil,
-					"mary":  nil,
-					"nancy": nil,
-					"rita":  nil,
-				}))
-			})
-
-			It("Should return an error instead of adding a duplicate command", func() {
-				err := commands.Add("john", nil)
-				Expect(err).To(MatchError(ErrDuplicateCommand))
-			})
+		It("Should return an error instead of adding a duplicate command", func() {
+			err := commands.Add("john", nil)
+			Expect(err).To(MatchError(ErrDuplicateCommand))
 		})
 	})
 
 	Describe("Finding a top level command", func() {
-		var commands CommandMap
 		var cmd *testCommand
 		BeforeEach(func() {
 			cmd = newTestCommand()
-			commands = CommandMap{
-				"cmd": cmd,
-			}
+			commands.Add("cmd", cmd)
 		})
 
 		It("should return an error if no command is found", func() {
@@ -116,8 +116,24 @@ var _ = Describe("CommandMap", func() {
 
 			Expect(arguments).To(Equal([]string{"arg1", "arg2"}))
 		})
+
+		It("should return the top level command if it is a TreeCommand with no sub commands", func() {
+			treeCmd := NewTreeCommand(CommandMap{})
+			commands.Add("treeCmd", treeCmd)
+			cmd, arguments, _ := commands.Find([]string{"treeCmd", "arg", "arg2"})
+			Expect(cmd).To(Equal(treeCmd))
+			Expect(arguments).To(Equal([]string{"arg", "arg2"}))
+		})
 	})
 
+	Describe("Exec", func() {
+		It("Should return an error if executing a command that can't be found", func() {
+			Expect(commands.Exec([]string{"invalid"})).To(MatchError(ErrNoMatchingCommand))
+		})
+	})
+})
+
+var _ = Describe("TreeCommand", func() {
 	Describe("Finding a sub-command", func() {
 		var commands CommandMap
 		var tlc TreeCommand
@@ -150,25 +166,30 @@ var _ = Describe("CommandMap", func() {
 			_, arguments, _ := commands.Find([]string{"tlc", "subCmd1", "arg1", "arg2"})
 			Expect(arguments).To(Equal([]string{"arg1", "arg2"}))
 		})
-	})
 
-	Describe("Executing a command", func() {
-		var commands CommandMap
-		var command *testCommand
-
-		BeforeEach(func() {
-			command = newTestCommand()
-			commands = CommandMap{"cmd": command}
-		})
-
-		It("Should execute the command if found", func() {
-			Expect(commands.Exec([]string{"cmd"})).To(Succeed())
-			Expect(command.executed).To(BeTrue())
-		})
-
-		It("Shoud return an error if the command is not found", func() {
-			err := commands.Exec([]string{"foo"})
-			Expect(err).To(MatchError(ErrNoMatchingCommand))
+		It("Should return nil when executing", func() {
+			Expect(tlc.Exec([]string{})).To(BeNil())
 		})
 	})
+	/*
+		Describe("Executing a command", func() {
+			var commands CommandMap
+			var command *testCommand
+
+			BeforeEach(func() {
+				command = newTestCommand()
+				commands = CommandMap{"cmd": command}
+			})
+
+			It("Should execute the command if found", func() {
+				Expect(commands.Exec([]string{"cmd"})).To(Succeed())
+				Expect(command.executed).To(BeTrue())
+			})
+
+			It("Shoud return an error if the command is not found", func() {
+				err := commands.Exec([]string{"foo"})
+				Expect(err).To(MatchError(ErrNoMatchingCommand))
+			})
+		})
+	*/
 })

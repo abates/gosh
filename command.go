@@ -20,13 +20,12 @@ import (
 	"strings"
 )
 
-type TreeCommand struct {
-	subCommands CommandMap
-	completions []string
+type Completable interface {
+	Completions() []string
 }
 
-func (t TreeCommand) Completions() []string {
-	return t.completions
+type TreeCommand struct {
+	subCommands CommandMap
 }
 
 func (t TreeCommand) SubCommands() CommandMap {
@@ -40,20 +39,12 @@ func (t TreeCommand) Exec([]string) error {
 func NewTreeCommand(commands CommandMap) TreeCommand {
 	tree := TreeCommand{
 		subCommands: commands,
-		completions: make([]string, len(commands)),
-	}
-
-	i := 0
-	for commandName, _ := range commands {
-		tree.completions[i] = commandName
-		i += 1
 	}
 	return tree
 }
 
 type Command interface {
 	Exec([]string) error
-	Completions() []string
 }
 
 type CommandMap map[string]Command

@@ -27,8 +27,7 @@ type Completer struct {
 }
 
 func NewCompleter(commands CommandMap) *Completer {
-	completer := &Completer{commands}
-	return completer
+	return &Completer{commands}
 }
 
 func (completer Completer) Complete(line string) (c []string) {
@@ -54,16 +53,16 @@ func (completer Completer) Complete(line string) (c []string) {
 			 */
 			if field == completion {
 				prefix = prefix + completion + " "
-				if command, ok := command.(TreeCommand); ok {
-					commands = command.SubCommands()
-				} else {
-					completions := command.Completions()
-					commands = make(CommandMap, len(completions))
-					for _, completion := range completions {
-						commands[completion] = command
+				if treeCommand, ok := command.(TreeCommand); ok {
+					commands = treeCommand.SubCommands()
+					break
+				} else if completable, ok := command.(Completable); ok {
+					nextCompletions := completable.Completions()
+					commands = make(CommandMap, len(nextCompletions))
+					for _, nextCompletion := range nextCompletions {
+						commands[nextCompletion] = command
 					}
 				}
-				break
 			} else {
 				c = append(c, prefix+completion)
 			}

@@ -71,10 +71,6 @@ var _ = Describe("DefaultPrompt", func() {
 	})
 
 	Describe("the line editor", func() {
-		It("Should default to using the default line editor", func() {
-			Expect(prompt.lineEditor).To(BeAssignableToTypeOf(DefaultLineEditor{}))
-		})
-
 		It("Should allow overriding the default line editor", func() {
 			Expect(prompt.SetLineEditor(newTestLineEditor())).To(Succeed())
 		})

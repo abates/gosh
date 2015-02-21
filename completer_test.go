@@ -21,29 +21,15 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-type mySimpleCommand struct{}
-
-func (c *mySimpleCommand) Completions() []string {
-	return nil
-}
-
-func (c *mySimpleCommand) Exec(arguments []string) error {
-	return nil
-}
-
-func NewSimpleCommand() *mySimpleCommand {
-	return &mySimpleCommand{}
-}
-
-var _ = Describe("Gosh", func() {
-	Describe("Completer behavior", func() {
+var _ = Describe("Completer", func() {
+	Describe("top level behavior", func() {
 		var completer *Completer
 		BeforeEach(func() {
 			completer = NewCompleter(CommandMap{
-				"john":  NewSimpleCommand(),
-				"james": NewSimpleCommand(),
-				"mary":  NewSimpleCommand(),
-				"nancy": NewSimpleCommand(),
+				"john":  newTestCommand(),
+				"james": newTestCommand(),
+				"mary":  newTestCommand(),
+				"nancy": newTestCommand(),
 			})
 		})
 
@@ -63,13 +49,13 @@ var _ = Describe("Gosh", func() {
 		BeforeEach(func() {
 			completer = NewCompleter(CommandMap{
 				"john": NewTreeCommand(CommandMap{
-					"jacob":        NewSimpleCommand(),
-					"jingleheimer": NewSimpleCommand(),
-					"schmidt":      NewSimpleCommand(),
+					"jacob":        newTestCommand(),
+					"jingleheimer": newTestCommand(),
+					"schmidt":      newTestCommand(),
 				}),
-				"james": NewSimpleCommand(),
-				"mary":  NewSimpleCommand(),
-				"nancy": NewSimpleCommand(),
+				"james": newTestCommand(),
+				"mary":  newTestCommand(),
+				"nancy": newTestCommand(),
 			})
 		})
 
@@ -81,6 +67,43 @@ var _ = Describe("Gosh", func() {
 		It("Should return only matching second level tokens when there is an exact match for the first field and second field", func() {
 			wanted := []string{"john jacob", "john jingleheimer"}
 			Expect(completer.Complete("john j")).To(Equal(wanted))
+		})
+	})
+
+	Describe("Simple command completions", func() {
+		var command *testCommand
+		var completer *Completer
+		var completions []string
+
+		BeforeEach(func() {
+			command = newTestCommand()
+			completions = []string{
+				"aarg1",
+				"aarg2",
+				"barg1",
+				"barg2",
+			}
+
+			command.setCompletions(completions)
+			completer = NewCompleter(CommandMap{
+				"cmd": command,
+			})
+		})
+
+		It("should return all arguments when completing the command with no prefix", func() {
+			Expect(completer.Complete("cmd ")).To(Equal([]string{
+				"cmd aarg1",
+				"cmd aarg2",
+				"cmd barg1",
+				"cmd barg2",
+			}))
+		})
+
+		It("should return matching arguments for a given prefix", func() {
+			Expect(completer.Complete("cmd a")).To(Equal([]string{
+				"cmd aarg1",
+				"cmd aarg2",
+			}))
 		})
 	})
 })

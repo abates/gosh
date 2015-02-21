@@ -24,25 +24,10 @@ type LineEditor interface {
 	Prompt(string) (string, error)
 }
 
-type DefaultLineEditor struct {
-	liner     *liner.State
-	completer *Completer
-}
-
-func (editor DefaultLineEditor) Prompt(prompt string) (string, error) {
-	return editor.liner.Prompt(prompt)
-}
-
 func NewDefaultLineEditor(commands CommandMap) LineEditor {
-	editor := DefaultLineEditor{
-		liner:     liner.NewLiner(),
-		completer: NewCompleter(commands),
-	}
-	editor.liner.SetCompleter(editor.completer.Complete)
+	liner := liner.NewLiner()
+	completer := NewCompleter(commands)
+	liner.SetCompleter(completer.Complete)
 
-	return editor
-}
-
-func (editor DefaultLineEditor) Close() error {
-	return editor.liner.Close()
+	return liner
 }
