@@ -31,7 +31,6 @@ type Prompter func() string
 type DefaultPrompt struct {
 	prompter   Prompter
 	lineEditor LineEditor
-	commands   CommandMap
 }
 
 func NewDefaultPrompt(commands CommandMap) *DefaultPrompt {
@@ -39,8 +38,7 @@ func NewDefaultPrompt(commands CommandMap) *DefaultPrompt {
 		func() string {
 			return "> "
 		},
-		NewDefaultLineEditor(),
-		commands,
+		NewDefaultLineEditor(commands),
 	}
 	return &p
 }
