@@ -84,7 +84,7 @@ var _ = Describe("DefaultPrompt", func() {
 		})
 
 		It("Should return an error when closing the line editor returns an error", func() {
-			lineEditor.err = errors.New("Close error")
+			lineEditor.closeErr = errors.New("Close error")
 			err := prompt.Close()
 			Expect(err).To(MatchError("Close error"))
 		})
@@ -98,8 +98,7 @@ var _ = Describe("DefaultPrompt", func() {
 	Describe("getting a response", func() {
 		It("should return a response captured from LineEditor.Prompt", func() {
 			lineEditor := newTestLineEditor()
-			lineEditor.response = "response"
-			lineEditor.err = errors.New("OK")
+			lineEditor.addResponse("response", errors.New("OK"))
 
 			prompt.SetLineEditor(lineEditor)
 			response, err := prompt.NextResponse()
