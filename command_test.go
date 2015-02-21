@@ -21,34 +21,24 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-type simpleCommand struct {
+type testCommand struct {
 	executed  bool
 	arguments []string
 }
 
-func (t *simpleCommand) Completions() []string {
+func (t *testCommand) Completions() []string {
 	return nil
 }
 
-func (t *simpleCommand) Exec(arguments []string) error {
+func (t *testCommand) Exec(arguments []string) error {
 	t.executed = true
 	t.arguments = arguments
 	return nil
 }
 
-func newSimpleCommand() *simpleCommand {
-	return &simpleCommand{false, nil}
+func newTestCommand() *testCommand {
+	return &testCommand{false, nil}
 }
-
-/*func newComplexCommand() *complexCommand {
-	return &complexCommand{
-		map[string]*simpleCommand{
-			"subCmd1": newSimpleCommand(),
-			"subCmd2": newSimpleCommand(),
-		},
-		false,
-	}
-}*/
 
 var _ = Describe("CommandMap", func() {
 	Describe("functions", func() {
@@ -96,9 +86,9 @@ var _ = Describe("CommandMap", func() {
 
 	Describe("Finding a top level command", func() {
 		var commands CommandMap
-		var cmd *simpleCommand
+		var cmd *testCommand
 		BeforeEach(func() {
-			cmd = newSimpleCommand()
+			cmd = newTestCommand()
 			commands = CommandMap{
 				"cmd": cmd,
 			}
@@ -132,8 +122,8 @@ var _ = Describe("CommandMap", func() {
 		var tlc TreeCommand
 		BeforeEach(func() {
 			tlc = NewTreeCommand(CommandMap{
-				"subCmd1": newSimpleCommand(),
-				"subCmd2": newSimpleCommand(),
+				"subCmd1": newTestCommand(),
+				"subCmd2": newTestCommand(),
 			})
 			commands = CommandMap{"tlc": tlc}
 		})
@@ -163,10 +153,10 @@ var _ = Describe("CommandMap", func() {
 
 	Describe("Executing a command", func() {
 		var commands CommandMap
-		var command *simpleCommand
+		var command *testCommand
 
 		BeforeEach(func() {
-			command = newSimpleCommand()
+			command = newTestCommand()
 			commands = CommandMap{"cmd": command}
 		})
 
