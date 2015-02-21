@@ -68,7 +68,7 @@ func (commands CommandMap) getCompletions(field string) CommandMap {
 	return completions
 }
 
-func (commands CommandMap) AddCommand(commandName string, command Command) error {
+func (commands CommandMap) Add(commandName string, command Command) error {
 	if _, ok := commands[commandName]; ok {
 		return ErrDuplicateCommand
 	}

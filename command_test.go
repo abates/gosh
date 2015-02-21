@@ -65,9 +65,9 @@ var _ = Describe("CommandMap", func() {
 			})
 		})
 
-		Describe("AddCommand", func() {
+		Describe("Add", func() {
 			It("Should add a new command to the map", func() {
-				Expect(commands.AddCommand("rita", nil)).To(Succeed())
+				Expect(commands.Add("rita", nil)).To(Succeed())
 				Expect(commands.getCompletions("")).To(Equal(CommandMap{
 					"john":  nil,
 					"james": nil,
@@ -78,7 +78,7 @@ var _ = Describe("CommandMap", func() {
 			})
 
 			It("Should return an error instead of adding a duplicate command", func() {
-				err := commands.AddCommand("john", nil)
+				err := commands.Add("john", nil)
 				Expect(err).To(MatchError(ErrDuplicateCommand))
 			})
 		})
