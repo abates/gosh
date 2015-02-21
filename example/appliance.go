@@ -10,7 +10,7 @@ import (
 
 type TimeCommand struct{}
 
-func (t TimeCommand) Completions(gosh.CompletionInfo) []string {
+func (t TimeCommand) Completions() []string {
 	return nil
 }
 
@@ -35,7 +35,7 @@ func interfaceNames() ([]string, error) {
 
 type InterfaceCommand struct{}
 
-func (i InterfaceCommand) Completions(gosh.CompletionInfo) []string {
+func (i InterfaceCommand) Completions() []string {
 	names, err := interfaceNames()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to retrieve system interfaces: %v\n", err)
@@ -64,7 +64,7 @@ func (i InterfaceCommand) Exec(arguments []string) error {
 
 type InterfacesCommand struct{}
 
-func (i InterfacesCommand) Completions(gosh.CompletionInfo) []string {
+func (i InterfacesCommand) Completions() []string {
 	return nil
 }
 
