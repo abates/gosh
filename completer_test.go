@@ -35,12 +35,18 @@ var _ = Describe("Completer", func() {
 
 		It("Should return all the top level strings when the empty string is supplied", func() {
 			wanted := []string{"james", "john", "mary", "nancy"}
-			Expect(completer.Complete("")).To(Equal(wanted))
+			head, completions, tail := completer.Complete("", 0)
+			Expect(head).To(Equal(""))
+			Expect(completions).To(Equal(wanted))
+			Expect(tail).To(Equal(""))
 		})
 
 		It("Should return strings that match the input prefix", func() {
 			wanted := []string{"james", "john"}
-			Expect(completer.Complete("j")).To(Equal(wanted))
+			head, completions, tail := completer.Complete("j", 1)
+			Expect(head).To(Equal(""))
+			Expect(completions).To(Equal(wanted))
+			Expect(tail).To(Equal(""))
 		})
 	})
 
@@ -60,13 +66,19 @@ var _ = Describe("Completer", func() {
 		})
 
 		It("Should return all the second level tokens when there is an exact match for the first field and no second field", func() {
-			wanted := []string{"john jacob", "john jingleheimer", "john schmidt"}
-			Expect(completer.Complete("john ")).To(Equal(wanted))
+			wanted := []string{"jacob", "jingleheimer", "schmidt"}
+			head, completions, tail := completer.Complete("john ", 5)
+			Expect(head).To(Equal("john "))
+			Expect(completions).To(Equal(wanted))
+			Expect(tail).To(Equal(""))
 		})
 
 		It("Should return only matching second level tokens when there is an exact match for the first field and second field", func() {
-			wanted := []string{"john jacob", "john jingleheimer"}
-			Expect(completer.Complete("john j")).To(Equal(wanted))
+			wanted := []string{"jacob", "jingleheimer"}
+			head, completions, tail := completer.Complete("john j", 6)
+			Expect(head).To(Equal("john "))
+			Expect(completions).To(Equal(wanted))
+			Expect(tail).To(Equal(""))
 		})
 	})
 
@@ -91,19 +103,25 @@ var _ = Describe("Completer", func() {
 		})
 
 		It("should return all arguments when completing the command with no prefix", func() {
-			Expect(completer.Complete("cmd ")).To(Equal([]string{
-				"cmd aarg1",
-				"cmd aarg2",
-				"cmd barg1",
-				"cmd barg2",
+			head, completions, tail := completer.Complete("cmd ", 4)
+			Expect(head).To(Equal("cmd "))
+			Expect(completions).To(Equal([]string{
+				"aarg1",
+				"aarg2",
+				"barg1",
+				"barg2",
 			}))
+			Expect(tail).To(Equal(""))
 		})
 
 		It("should return matching arguments for a given prefix", func() {
-			Expect(completer.Complete("cmd a")).To(Equal([]string{
-				"cmd aarg1",
-				"cmd aarg2",
+			head, completions, tail := completer.Complete("cmd a", 5)
+			Expect(head).To(Equal("cmd "))
+			Expect(completions).To(Equal([]string{
+				"aarg1",
+				"aarg2",
 			}))
+			Expect(tail).To(Equal(""))
 		})
 	})
 })

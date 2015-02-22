@@ -27,7 +27,7 @@ type LineEditor interface {
 func NewDefaultLineEditor(commands CommandMap) LineEditor {
 	liner := liner.NewLiner()
 	completer := NewCompleter(commands)
-	liner.SetCompleter(completer.Complete)
+	liner.SetWordCompleter(completer.Complete)
 
 	return liner
 }

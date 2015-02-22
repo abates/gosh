@@ -30,9 +30,13 @@ func NewCompleter(commands CommandMap) *Completer {
 	return &Completer{commands}
 }
 
-func (completer Completer) Complete(line string) (c []string) {
-	prefix := ""
-	fields := strings.Fields(line)
+func (completer Completer) Complete(line string, pos int) (string, []string, string) {
+	var c []string
+	tail := line[pos:]
+	line = line[:pos]
+
+	head := ""
+	fields := strings.Fields(line[:pos])
 	/* We need to make sure that there are empty fields
 	 * in the event of a blank line, or a line that ends
 	 * in a space.  Otherwise, there is nothing to attempt
@@ -40,7 +44,7 @@ func (completer Completer) Complete(line string) (c []string) {
 	 */
 	if len(fields) == 0 {
 		fields = []string{""}
-	} else if unicode.IsSpace(rune(line[len(line)-1])) {
+	} else if unicode.IsSpace(rune(line[pos-1])) {
 		fields = append(fields, "")
 	}
 
@@ -52,7 +56,7 @@ func (completer Completer) Complete(line string) (c []string) {
 			 * continue to the next field
 			 */
 			if field == completion {
-				prefix = prefix + completion + " "
+				head = head + completion + " "
 				if treeCommand, ok := command.(TreeCommand); ok {
 					commands = treeCommand.SubCommands()
 					break
@@ -64,10 +68,10 @@ func (completer Completer) Complete(line string) (c []string) {
 					}
 				}
 			} else {
-				c = append(c, prefix+completion)
+				c = append(c, completion)
 			}
 		}
 	}
 	sort.Strings(c)
-	return
+	return head, c, tail
 }
