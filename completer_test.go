@@ -55,6 +55,7 @@ var _ = Describe("Completer", func() {
 		var commands CommandMap
 		BeforeEach(func() {
 			commands = CommandMap{
+				"johnson": newTestCommand(),
 				"john": NewTreeCommand(CommandMap{
 					"jacob":        newTestCommand(),
 					"jingleheimer": newTestCommand(),
@@ -86,7 +87,6 @@ var _ = Describe("Completer", func() {
 
 		It("Should not return parent completions when there is ambiguity", func() {
 			wanted := []string{"jacob", "jingleheimer"}
-			commands.Add("johnson", nil)
 			head, completions, tail := completer.Complete("john j", 6)
 			Expect(head).To(Equal("john "))
 			Expect(completions).To(Equal(wanted))

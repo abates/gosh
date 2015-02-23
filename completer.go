@@ -49,7 +49,7 @@ func (completer Completer) Complete(line string, pos int) (string, []string, str
 	}
 
 	commands := completer.topLevelCommands
-	for _, field := range fields {
+	for i, field := range fields {
 		completions := commands.getCompletions(field)
 		for completion, command := range completions {
 			/* If it is an exact match then
@@ -67,7 +67,7 @@ func (completer Completer) Complete(line string, pos int) (string, []string, str
 						commands[nextCompletion] = command
 					}
 				}
-			} else {
+			} else if i == len(fields)-1 {
 				c = append(c, completion)
 			}
 		}
