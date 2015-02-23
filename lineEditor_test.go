@@ -17,9 +17,11 @@
 package gosh
 
 import (
+	"bytes"
 	. "github.com/onsi/ginkgo"
-	//. "github.com/onsi/gomega"
+	. "github.com/onsi/gomega"
 	"io"
+	"os"
 )
 
 type testResponse struct {
@@ -68,6 +70,20 @@ type nonCloseableLineEditor struct{}
 
 func (t *nonCloseableLineEditor) Prompt(string) (string, error) { return "", nil }
 
-var _ = Describe("LineEditor", func() {
+var _ = Describe("DefaultLineEditor", func() {
+	It("Should append the last command to the history", func() {
+		var b bytes.Buffer
 
+		stdin_r, stdin_wr, _ := os.Pipe()
+		oldStdin := os.Stdin
+		os.Stdin = stdin_r
+
+		editor := NewDefaultLineEditor(CommandMap{})
+
+		stdin_wr.Write([]byte("cmd\n"))
+		editor.Prompt(">")
+		os.Stdin = oldStdin
+		editor.liner.WriteHistory(&b)
+		Expect(b.String()).To(Equal("cmd\n"))
+	})
 })

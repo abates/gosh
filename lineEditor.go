@@ -36,7 +36,7 @@ func (d *DefaultLineEditor) Prompt(prompt string) (string, error) {
 	return str, err
 }
 
-func NewDefaultLineEditor(commands CommandMap) LineEditor {
+func NewDefaultLineEditor(commands CommandMap) *DefaultLineEditor {
 	liner := liner.NewLiner()
 	completer := NewCompleter(commands)
 	liner.SetWordCompleter(completer.Complete)
