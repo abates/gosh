@@ -52,8 +52,9 @@ var _ = Describe("Completer", func() {
 
 	Describe("Second level HierarchyCompleter response", func() {
 		var completer *Completer
+		var commands CommandMap
 		BeforeEach(func() {
-			completer = NewCompleter(CommandMap{
+			commands = CommandMap{
 				"john": NewTreeCommand(CommandMap{
 					"jacob":        newTestCommand(),
 					"jingleheimer": newTestCommand(),
@@ -62,7 +63,9 @@ var _ = Describe("Completer", func() {
 				"james": newTestCommand(),
 				"mary":  newTestCommand(),
 				"nancy": newTestCommand(),
-			})
+			}
+
+			completer = NewCompleter(commands)
 		})
 
 		It("Should return all the second level tokens when there is an exact match for the first field and no second field", func() {
@@ -75,6 +78,15 @@ var _ = Describe("Completer", func() {
 
 		It("Should return only matching second level tokens when there is an exact match for the first field and second field", func() {
 			wanted := []string{"jacob", "jingleheimer"}
+			head, completions, tail := completer.Complete("john j", 6)
+			Expect(head).To(Equal("john "))
+			Expect(completions).To(Equal(wanted))
+			Expect(tail).To(Equal(""))
+		})
+
+		It("Should not return parent completions when there is ambiguity", func() {
+			wanted := []string{"jacob", "jingleheimer"}
+			commands.Add("johnson", nil)
 			head, completions, tail := completer.Complete("john j", 6)
 			Expect(head).To(Equal("john "))
 			Expect(completions).To(Equal(wanted))
