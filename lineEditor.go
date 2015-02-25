@@ -36,11 +36,16 @@ func (d *DefaultLineEditor) Prompt(prompt string) (string, error) {
 	return str, err
 }
 
+func (d *DefaultLineEditor) Close() error {
+	return d.liner.Close()
+}
+
 func NewDefaultLineEditor(commands CommandMap) *DefaultLineEditor {
-	liner := liner.NewLiner()
+	l := liner.NewLiner()
+	l.SetTabCompletionStyle(liner.TabPrints)
 	completer := NewCompleter(commands)
-	liner.SetWordCompleter(completer.Complete)
+	l.SetWordCompleter(completer.Complete)
 	return &DefaultLineEditor{
-		liner: liner,
+		liner: l,
 	}
 }
