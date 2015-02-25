@@ -22,6 +22,29 @@ import (
 )
 
 var _ = Describe("Completer", func() {
+	Describe("Single completion", func() {
+		var completer *Completer
+		BeforeEach(func() {
+			completer = NewCompleter(CommandMap{
+				"cmd": newTestCommand(),
+			})
+		})
+
+		It("Should auto complete an empty string with the whole command", func() {
+			head, completions, tail := completer.Complete("", 0)
+			Expect(head).To(Equal(""))
+			Expect(completions).To(Equal([]string{"cmd"}))
+			Expect(tail).To(Equal(""))
+		})
+
+		It("Should auto complete a given string with the whole command", func() {
+			head, completions, tail := completer.Complete("c", 1)
+			Expect(head).To(Equal(""))
+			Expect(completions).To(Equal([]string{"cmd"}))
+			Expect(tail).To(Equal(""))
+		})
+	})
+
 	Describe("top level behavior", func() {
 		var completer *Completer
 		BeforeEach(func() {
