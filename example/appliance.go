@@ -10,10 +10,6 @@ import (
 
 type TimeCommand struct{}
 
-func (t TimeCommand) Completions() []string {
-	return nil
-}
-
 func (TimeCommand) Exec(arguments []string) error {
 	t := time.Now()
 	fmt.Println(t.Format(time.RFC822))
@@ -63,10 +59,6 @@ func (i InterfaceCommand) Exec(arguments []string) error {
 }
 
 type InterfacesCommand struct{}
-
-func (i InterfacesCommand) Completions() []string {
-	return nil
-}
 
 func (i InterfacesCommand) Exec(fields []string) error {
 	names, err := interfaceNames()
