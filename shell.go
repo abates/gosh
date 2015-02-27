@@ -37,9 +37,8 @@ func (shell *Shell) SetPrompter(prompter Prompter) error {
 	if defaultPrompter, ok := shell.prompt.(*DefaultPrompt); ok {
 		defaultPrompter.SetPrompter(prompter)
 		return nil
-	} else {
-		return ErrDefaultPrompter
 	}
+	return ErrDefaultPrompter
 }
 
 func (shell *Shell) SetPrompt(prompt Prompt) error {
