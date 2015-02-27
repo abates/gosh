@@ -21,24 +21,24 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Completer", func() {
+var _ = Describe("completer", func() {
 	Describe("Single completion", func() {
-		var completer *Completer
+		var c *completer
 		BeforeEach(func() {
-			completer = NewCompleter(CommandMap{
+			c = newCompleter(CommandMap{
 				"cmd": newTestCommand(),
 			})
 		})
 
 		It("Should auto complete an empty string with the whole command", func() {
-			head, completions, tail := completer.Complete("", 0)
+			head, completions, tail := c.complete("", 0)
 			Expect(head).To(Equal(""))
 			Expect(completions).To(Equal([]string{"cmd"}))
 			Expect(tail).To(Equal(""))
 		})
 
 		It("Should auto complete a given string with the whole command", func() {
-			head, completions, tail := completer.Complete("c", 1)
+			head, completions, tail := c.complete("c", 1)
 			Expect(head).To(Equal(""))
 			Expect(completions).To(Equal([]string{"cmd"}))
 			Expect(tail).To(Equal(""))
@@ -46,9 +46,9 @@ var _ = Describe("Completer", func() {
 	})
 
 	Describe("top level behavior", func() {
-		var completer *Completer
+		var c *completer
 		BeforeEach(func() {
-			completer = NewCompleter(CommandMap{
+			c = newCompleter(CommandMap{
 				"john":  newTestCommand(),
 				"james": newTestCommand(),
 				"mary":  newTestCommand(),
@@ -58,7 +58,7 @@ var _ = Describe("Completer", func() {
 
 		It("Should return all the top level strings when the empty string is supplied", func() {
 			wanted := []string{"james", "john", "mary", "nancy"}
-			head, completions, tail := completer.Complete("", 0)
+			head, completions, tail := c.complete("", 0)
 			Expect(head).To(Equal(""))
 			Expect(completions).To(Equal(wanted))
 			Expect(tail).To(Equal(""))
@@ -66,7 +66,7 @@ var _ = Describe("Completer", func() {
 
 		It("Should return strings that match the input prefix", func() {
 			wanted := []string{"james", "john"}
-			head, completions, tail := completer.Complete("j", 1)
+			head, completions, tail := c.complete("j", 1)
 			Expect(head).To(Equal(""))
 			Expect(completions).To(Equal(wanted))
 			Expect(tail).To(Equal(""))
@@ -74,7 +74,7 @@ var _ = Describe("Completer", func() {
 	})
 
 	Describe("Second level HierarchyCompleter response", func() {
-		var completer *Completer
+		var c *completer
 		var commands CommandMap
 		BeforeEach(func() {
 			commands = CommandMap{
@@ -89,12 +89,12 @@ var _ = Describe("Completer", func() {
 				"nancy": newTestCommand(),
 			}
 
-			completer = NewCompleter(commands)
+			c = newCompleter(commands)
 		})
 
 		It("Should return all the second level tokens when there is an exact match for the first field and no second field", func() {
 			wanted := []string{"jacob", "jingleheimer", "schmidt"}
-			head, completions, tail := completer.Complete("john ", 5)
+			head, completions, tail := c.complete("john ", 5)
 			Expect(head).To(Equal("john "))
 			Expect(completions).To(Equal(wanted))
 			Expect(tail).To(Equal(""))
@@ -102,7 +102,7 @@ var _ = Describe("Completer", func() {
 
 		It("Should return only matching second level tokens when there is an exact match for the first field and second field", func() {
 			wanted := []string{"jacob", "jingleheimer"}
-			head, completions, tail := completer.Complete("john j", 6)
+			head, completions, tail := c.complete("john j", 6)
 			Expect(head).To(Equal("john "))
 			Expect(completions).To(Equal(wanted))
 			Expect(tail).To(Equal(""))
@@ -110,7 +110,7 @@ var _ = Describe("Completer", func() {
 
 		It("Should not return parent completions when there is ambiguity", func() {
 			wanted := []string{"jacob", "jingleheimer"}
-			head, completions, tail := completer.Complete("john j", 6)
+			head, completions, tail := c.complete("john j", 6)
 			Expect(head).To(Equal("john "))
 			Expect(completions).To(Equal(wanted))
 			Expect(tail).To(Equal(""))
@@ -119,7 +119,7 @@ var _ = Describe("Completer", func() {
 
 	Describe("Simple command completions", func() {
 		var command *testCommand
-		var completer *Completer
+		var c *completer
 		var completions []string
 
 		BeforeEach(func() {
@@ -132,13 +132,13 @@ var _ = Describe("Completer", func() {
 			}
 
 			command.setCompletions(completions)
-			completer = NewCompleter(CommandMap{
+			c = newCompleter(CommandMap{
 				"cmd": command,
 			})
 		})
 
 		It("should return all arguments when completing the command with no prefix", func() {
-			head, completions, tail := completer.Complete("cmd ", 4)
+			head, completions, tail := c.complete("cmd ", 4)
 			Expect(head).To(Equal("cmd "))
 			Expect(completions).To(Equal([]string{
 				"aarg1",
@@ -150,7 +150,7 @@ var _ = Describe("Completer", func() {
 		})
 
 		It("should return matching arguments for a given prefix", func() {
-			head, completions, tail := completer.Complete("cmd a", 5)
+			head, completions, tail := c.complete("cmd a", 5)
 			Expect(head).To(Equal("cmd "))
 			Expect(completions).To(Equal([]string{
 				"aarg1",

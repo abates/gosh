@@ -43,8 +43,8 @@ func (d *DefaultLineEditor) Close() error {
 func NewDefaultLineEditor(commands CommandMap) *DefaultLineEditor {
 	l := liner.NewLiner()
 	l.SetTabCompletionStyle(liner.TabPrints)
-	completer := NewCompleter(commands)
-	l.SetWordCompleter(completer.Complete)
+	completer := newCompleter(commands)
+	l.SetWordCompleter(completer.complete)
 	return &DefaultLineEditor{
 		liner: l,
 	}

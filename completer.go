@@ -22,15 +22,15 @@ import (
 	"unicode"
 )
 
-type Completer struct {
+type completer struct {
 	topLevelCommands CommandMap
 }
 
-func NewCompleter(commands CommandMap) *Completer {
-	return &Completer{commands}
+func newCompleter(commands CommandMap) *completer {
+	return &completer{commands}
 }
 
-func (completer Completer) Complete(line string, pos int) (string, []string, string) {
+func (this completer) complete(line string, pos int) (string, []string, string) {
 	var c []string
 	tail := line[pos:]
 	line = line[:pos]
@@ -48,7 +48,7 @@ func (completer Completer) Complete(line string, pos int) (string, []string, str
 		fields = append(fields, "")
 	}
 
-	commands := completer.topLevelCommands
+	commands := this.topLevelCommands
 	for i, field := range fields {
 		completions := commands.getCompletions(field)
 		for completion, command := range completions {
