@@ -74,7 +74,7 @@ var _ = Describe("Shell", func() {
 		})
 
 		It("Should prohibit setting the error writer to nil", func() {
-			Expect(shell.SetErrorWriter(nil)).To(MatchError("Cannot assign a nil writer"))
+			Expect(shell.SetErrorWriter(nil)).To(MatchError(ErrNilWriter))
 			Expect(shell.errorWriter).To(Equal(os.Stderr))
 		})
 	})
