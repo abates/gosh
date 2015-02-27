@@ -29,12 +29,12 @@ type Shell struct {
 	errorWriter io.Writer
 }
 
-func (s *Shell) SetPrompter(prompter Prompter) error {
+func (shell *Shell) SetPrompter(prompter Prompter) error {
 	if prompter == nil {
 		return ErrNilPrompter
 	}
 
-	if defaultPrompter, ok := s.prompt.(*DefaultPrompt); ok {
+	if defaultPrompter, ok := shell.prompt.(*DefaultPrompt); ok {
 		defaultPrompter.SetPrompter(prompter)
 		return nil
 	} else {
@@ -42,19 +42,19 @@ func (s *Shell) SetPrompter(prompter Prompter) error {
 	}
 }
 
-func (s *Shell) SetPrompt(prompt Prompt) error {
+func (shell *Shell) SetPrompt(prompt Prompt) error {
 	if prompt == nil {
 		return ErrNilPrompt
 	}
-	s.prompt = prompt
+	shell.prompt = prompt
 	return nil
 }
 
-func (s *Shell) SetErrorWriter(writer io.Writer) error {
+func (shell *Shell) SetErrorWriter(writer io.Writer) error {
 	if writer == nil {
 		return ErrNilWriter
 	}
-	s.errorWriter = writer
+	shell.errorWriter = writer
 	return nil
 }
 
