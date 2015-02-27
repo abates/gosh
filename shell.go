@@ -23,12 +23,21 @@ import (
 	"strings"
 )
 
+// Shell is the foundation for Gosh
+//
+// A Shell provides a way to prompt users for command input and then execute
+// those commands.  It includes line editing, history and command completion.
 type Shell struct {
 	prompt      Prompt
 	commands    CommandMap
 	errorWriter io.Writer
 }
 
+// SetPrompter overrides the prompter when the DefaultPrompt is being used
+//
+// A nil prompt will generate the ErrNilPrompter error and trying to override
+// the prompter when the DefaultPrompt is not being used generates
+// ErrDefaultPrompter
 func (shell *Shell) SetPrompter(prompter Prompter) error {
 	if prompter == nil {
 		return ErrNilPrompter
@@ -41,6 +50,12 @@ func (shell *Shell) SetPrompter(prompter Prompter) error {
 	return ErrDefaultPrompter
 }
 
+// SetPrompt overrides the Shell' Prompt implementation
+//
+// Shell is intialized with a DefaultPrompt to prompt the user and gather
+// responses.  This includes command completion and history.  However, the
+// Prompt can be overridden by a different implementation.  If a nil Prompt is
+// given, then ErrNilPrompt is returned
 func (shell *Shell) SetPrompt(prompt Prompt) error {
 	if prompt == nil {
 		return ErrNilPrompt
@@ -49,6 +64,10 @@ func (shell *Shell) SetPrompt(prompt Prompt) error {
 	return nil
 }
 
+// SetErrorWriter overrides the error stream
+//
+// Shell defaults to use os.Stderr for error messages.  This can be overridden
+// with a non-nil io.Writer.  A nil writer generates the ErrNilWriter error
 func (shell *Shell) SetErrorWriter(writer io.Writer) error {
 	if writer == nil {
 		return ErrNilWriter
@@ -57,6 +76,7 @@ func (shell *Shell) SetErrorWriter(writer io.Writer) error {
 	return nil
 }
 
+// NewShell returns a fully initialized Shell for the given CommandMap
 func NewShell(commands CommandMap) *Shell {
 	return &Shell{
 		prompt:      NewDefaultPrompt(commands),
@@ -65,6 +85,9 @@ func NewShell(commands CommandMap) *Shell {
 	}
 }
 
+// Exec starts the Shell prompt/execute loop.
+//
+// Exec returns upon io.EOF in the input stream
 func (shell *Shell) Exec() {
 	if prompt, ok := shell.prompt.(Closeable); ok {
 		defer prompt.Close()
