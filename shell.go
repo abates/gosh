@@ -29,6 +29,19 @@ type Shell struct {
 	errorWriter io.Writer
 }
 
+func (s *Shell) SetPrompter(prompter Prompter) error {
+	if prompter == nil {
+		return ErrNilPrompter
+	}
+
+	if defaultPrompter, ok := s.prompt.(*DefaultPrompt); ok {
+		defaultPrompter.SetPrompter(prompter)
+		return nil
+	} else {
+		return ErrDefaultPrompter
+	}
+}
+
 func (s *Shell) SetPrompt(prompt Prompt) error {
 	if prompt == nil {
 		return ErrNilPrompt
