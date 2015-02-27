@@ -74,13 +74,13 @@ var _ = Describe("DefaultLineEditor", func() {
 	It("Should append the last command to the history", func() {
 		var b bytes.Buffer
 
-		stdin_r, stdin_wr, _ := os.Pipe()
+		stdinR, stdinWr, _ := os.Pipe()
 		oldStdin := os.Stdin
-		os.Stdin = stdin_r
+		os.Stdin = stdinR
 
 		editor := NewDefaultLineEditor(CommandMap{})
 
-		stdin_wr.Write([]byte("cmd\n"))
+		stdinWr.Write([]byte("cmd\n"))
 		editor.Prompt(">")
 		os.Stdin = oldStdin
 		editor.liner.WriteHistory(&b)
