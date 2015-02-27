@@ -86,9 +86,9 @@ var _ = Describe("Shell", func() {
 		BeforeEach(func() {
 			prompt = newTestPrompt()
 			shell.SetPrompt(prompt)
-			stderr_r, stderr_wr, _ := os.Pipe()
-			stderr = bufio.NewReader(stderr_r)
-			shell.SetErrorWriter(stderr_wr)
+			stderrR, stderrWr, _ := os.Pipe()
+			stderr = bufio.NewReader(stderrR)
+			shell.SetErrorWriter(stderrWr)
 		})
 
 		It("Should always call Close() on closeable prompts when exiting", func() {
