@@ -30,8 +30,8 @@ func newCompleter(commands CommandMap) *completer {
 	return &completer{commands}
 }
 
-func (this completer) complete(line string, pos int) (string, []string, string) {
-	var c []string
+func (c completer) complete(line string, pos int) (string, []string, string) {
+	var candidates []string
 	tail := line[pos:]
 	line = line[:pos]
 
@@ -48,7 +48,7 @@ func (this completer) complete(line string, pos int) (string, []string, string) 
 		fields = append(fields, "")
 	}
 
-	commands := this.topLevelCommands
+	commands := c.topLevelCommands
 	for i, field := range fields {
 		completions := commands.getCompletions(field)
 		for completion, command := range completions {
@@ -73,10 +73,10 @@ func (this completer) complete(line string, pos int) (string, []string, string) 
 					break
 				}
 			} else if i == len(fields)-1 {
-				c = append(c, completion)
+				candidates = append(candidates, completion)
 			}
 		}
 	}
-	sort.Strings(c)
-	return head, c, tail
+	sort.Strings(candidates)
+	return head, candidates, tail
 }
