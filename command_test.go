@@ -28,7 +28,7 @@ type testCommand struct {
 	execErr     error
 }
 
-func (t *testCommand) Completions() []string {
+func (t *testCommand) Completions(substring string) []string {
 	return t.completions
 }
 

@@ -61,11 +61,16 @@ func (completer Completer) Complete(line string, pos int) (string, []string, str
 					commands = treeCommand.SubCommands()
 					break
 				} else if completable, ok := command.(Completable); ok {
-					nextCompletions := completable.Completions()
+					nextField := ""
+					if i < len(fields)-1 {
+						nextField = fields[i+1]
+					}
+					nextCompletions := completable.Completions(nextField)
 					commands = make(CommandMap, len(nextCompletions))
 					for _, nextCompletion := range nextCompletions {
 						commands[nextCompletion] = command
 					}
+					break
 				}
 			} else if i == len(fields)-1 {
 				c = append(c, completion)

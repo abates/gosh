@@ -21,7 +21,7 @@ import (
 )
 
 type Completable interface {
-	Completions() []string
+	Completions(substring string) []string
 }
 
 type TreeCommand struct {

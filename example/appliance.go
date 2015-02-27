@@ -31,7 +31,7 @@ func interfaceNames() ([]string, error) {
 
 type InterfaceCommand struct{}
 
-func (i InterfaceCommand) Completions() []string {
+func (i InterfaceCommand) Completions(substring string) []string {
 	names, err := interfaceNames()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to retrieve system interfaces: %v\n", err)
