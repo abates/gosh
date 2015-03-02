@@ -27,18 +27,19 @@ type testCommand struct {
 	executed     bool
 	arguments    []string
 	execErr      error
-	execCallback func([]string) error
+	execCallback func() error
 }
 
 func (t *testCommand) Completions(substring string) []string {
 	return t.completions
 }
 
-func (t *testCommand) Exec(arguments []string) error {
+func (t *testCommand) Exec() error {
 	t.executed = true
-	t.arguments = arguments
+	t.arguments = make([]string, len(os.Args))
+	copy(t.arguments, os.Args)
 	if t.execCallback != nil {
-		return t.execCallback(arguments)
+		return t.execCallback()
 	}
 	return t.execErr
 }
@@ -57,7 +58,7 @@ func newTestCommand() *testCommand {
 	}
 }
 
-func newCallbackCommand(callback func([]string) error) *testCommand {
+func newCallbackCommand(callback func() error) *testCommand {
 	return &testCommand{
 		completions:  nil,
 		executed:     false,
@@ -144,7 +145,7 @@ var _ = Describe("CommandMap", func() {
 		})
 
 		It("Should set os.Args to the program name and the argument list", func() {
-			cmd := newCallbackCommand(func(arguments []string) error {
+			cmd := newCallbackCommand(func() error {
 				Expect(os.Args).To(Equal([]string{"cmd", "arg1", "arg2"}))
 				return nil
 			})
@@ -199,11 +200,11 @@ var _ = Describe("TreeCommand", func() {
 		})
 
 		It("Should return nil when executing", func() {
-			Expect(tlc.Exec([]string{})).To(BeNil())
+			Expect(tlc.Exec()).To(BeNil())
 		})
 
 		It("Should set os.Args[0] to the full command path when executing the command", func() {
-			tlc.Add("subCmd3", newCallbackCommand(func(arguments []string) error {
+			tlc.Add("subCmd3", newCallbackCommand(func() error {
 				Expect(os.Args).To(Equal([]string{"tlc subCmd3", "arg1", "arg2"}))
 				return nil
 			}))

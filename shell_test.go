@@ -121,7 +121,7 @@ var _ = Describe("Shell", func() {
 				prompt.lineEditor.addResponse("", io.EOF)
 				shell.Exec()
 				Expect(command.executed).To(BeTrue())
-				Expect(command.arguments).To(Equal([]string{}))
+				Expect(command.arguments).To(Equal([]string{"test"}))
 			})
 
 			It("Should execute a command with some arguments", func() {
@@ -129,7 +129,7 @@ var _ = Describe("Shell", func() {
 				prompt.lineEditor.end()
 				shell.Exec()
 				Expect(command.executed).To(BeTrue())
-				Expect(command.arguments).To(Equal([]string{"arg1", "arg2"}))
+				Expect(command.arguments).To(Equal([]string{"test", "arg1", "arg2"}))
 			})
 
 			It("Should display an error if the command execution fails", func() {

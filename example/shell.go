@@ -60,16 +60,16 @@ func isDir(path string) bool {
 	return fi.IsDir()
 }
 
-func (this cd) Exec(arguments []string) error {
+func (this cd) Exec() error {
 	nextDir := ""
-	if len(arguments) == 0 {
+	if len(os.Args) == 1 {
 		home := os.Getenv("HOME")
 		if home != "" {
 			cwd = home
 		}
 		return nil
 	}
-	dir := arguments[0]
+	dir := os.Args[1]
 	if dir[0] == '/' {
 		nextDir = string(dir[0])
 	} else {
@@ -84,7 +84,7 @@ func (this cd) Exec(arguments []string) error {
 
 type ls struct{}
 
-func (this ls) Exec(arguments []string) error {
+func (this ls) Exec() error {
 	f, err := os.Open(cwd)
 	defer f.Close()
 

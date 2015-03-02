@@ -48,7 +48,7 @@ func (t TreeCommand) SubCommands() CommandMap {
 }
 
 // Exec does nothing since a TreeCommand only contains sub-commands
-func (t TreeCommand) Exec([]string) error {
+func (t TreeCommand) Exec() error {
 	return nil
 }
 
@@ -68,11 +68,11 @@ func NewTreeCommand(commands CommandMap) TreeCommand {
 // Command indicates that an object can be executed
 //
 // Exec should perform any computation necessary to execute the command that
-// provides the interface.  The Exec method is called with a slice of strings
-// that are the arguments to the command.  The argument list is any field that
-// follows the command
+// provides the interface.  Prior to calling the Exec method, the shell will assign
+// the arguments to os.Args.  If the command is expecting any arguments, then they will
+// be availabe as os.Args.  The argument list includes the command path as os.Args[0]
 type Command interface {
-	Exec([]string) error
+	Exec() error
 }
 
 // CommandMap is exactly what it sounds like.
@@ -139,12 +139,14 @@ func (commands CommandMap) Exec(fields []string) error {
 		return err
 	}
 
-	oldArgs := os.Args
+	oldArgs := make([]string, len(os.Args))
+	copy(oldArgs, os.Args)
+
 	defer func() { os.Args = oldArgs }()
 	os.Args = make([]string, len(arguments)+1)
 	os.Args[0] = strings.Join(fields[:len(fields)-len(arguments)], " ")
 	for i, argument := range arguments {
 		os.Args[i+1] = argument
 	}
-	return command.Exec(arguments)
+	return command.Exec()
 }

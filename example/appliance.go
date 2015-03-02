@@ -10,7 +10,7 @@ import (
 
 type TimeCommand struct{}
 
-func (TimeCommand) Exec(arguments []string) error {
+func (TimeCommand) Exec() error {
 	t := time.Now()
 	fmt.Println(t.Format(time.RFC822))
 	return nil
@@ -39,8 +39,8 @@ func (i InterfaceCommand) Completions(substring string) []string {
 	return names
 }
 
-func (i InterfaceCommand) Exec(arguments []string) error {
-	for _, name := range arguments {
+func (i InterfaceCommand) Exec() error {
+	for _, name := range os.Args[1:] {
 		netInterface, err := net.InterfaceByName(name)
 		if err != nil {
 			return err
@@ -60,7 +60,7 @@ func (i InterfaceCommand) Exec(arguments []string) error {
 
 type InterfacesCommand struct{}
 
-func (i InterfacesCommand) Exec(fields []string) error {
+func (i InterfacesCommand) Exec() error {
 	names, err := interfaceNames()
 	if err != nil {
 		return err
