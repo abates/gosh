@@ -7,6 +7,8 @@ commands can be hierarchical, similar to the CLI in common network operating
 systems.  The commands can also be more like traditional OS commands, with no
 hierarchy.
 
+## Examples
+
 A simple example of a single command shell:
 
 ```go
@@ -74,4 +76,7 @@ var commands = gosh.CommandMap{
   }),
 }
 ```
+
+## Documentation
+https://godoc.org/github.com/abates/gosh
 
