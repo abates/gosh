@@ -17,6 +17,7 @@
 package gosh
 
 import (
+	"os"
 	"strings"
 )
 
@@ -49,6 +50,11 @@ func (t TreeCommand) SubCommands() CommandMap {
 // Exec does nothing since a TreeCommand only contains sub-commands
 func (t TreeCommand) Exec([]string) error {
 	return nil
+}
+
+// Add another sub-command to this TreeCommand
+func (t TreeCommand) Add(name string, command Command) error {
+	return t.subCommands.Add(name, command)
 }
 
 // NewTreeCommand creates a TreeCommand for the given CommandMap
@@ -126,12 +132,19 @@ func (commands CommandMap) Find(arguments []string) (Command, []string, error) {
 }
 
 // Exec finds and execute a command corresponding to the argument list
-func (commands CommandMap) Exec(arguments []string) error {
-	command, arguments, err := commands.Find(arguments)
+func (commands CommandMap) Exec(fields []string) error {
+	command, arguments, err := commands.Find(fields)
 
 	if err != nil {
 		return err
 	}
 
+	oldArgs := os.Args
+	defer func() { os.Args = oldArgs }()
+	os.Args = make([]string, len(arguments)+1)
+	os.Args[0] = strings.Join(fields[:len(fields)-len(arguments)], " ")
+	for i, argument := range arguments {
+		os.Args[i+1] = argument
+	}
 	return command.Exec(arguments)
 }

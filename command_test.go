@@ -19,13 +19,15 @@ package gosh
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"os"
 )
 
 type testCommand struct {
-	completions []string
-	executed    bool
-	arguments   []string
-	execErr     error
+	completions  []string
+	executed     bool
+	arguments    []string
+	execErr      error
+	execCallback func([]string) error
 }
 
 func (t *testCommand) Completions(substring string) []string {
@@ -35,6 +37,9 @@ func (t *testCommand) Completions(substring string) []string {
 func (t *testCommand) Exec(arguments []string) error {
 	t.executed = true
 	t.arguments = arguments
+	if t.execCallback != nil {
+		return t.execCallback(arguments)
+	}
 	return t.execErr
 }
 
@@ -43,7 +48,23 @@ func (t *testCommand) setCompletions(completions []string) {
 }
 
 func newTestCommand() *testCommand {
-	return &testCommand{nil, false, nil, nil}
+	return &testCommand{
+		completions:  nil,
+		executed:     false,
+		arguments:    nil,
+		execErr:      nil,
+		execCallback: nil,
+	}
+}
+
+func newCallbackCommand(callback func([]string) error) *testCommand {
+	return &testCommand{
+		completions:  nil,
+		executed:     false,
+		arguments:    nil,
+		execErr:      nil,
+		execCallback: callback,
+	}
 }
 
 var _ = Describe("CommandMap", func() {
@@ -113,22 +134,24 @@ var _ = Describe("CommandMap", func() {
 
 		It("should return the arguments to the command when arguments are given", func() {
 			_, arguments, _ := commands.Find([]string{"cmd", "arg1", "arg2"})
-
 			Expect(arguments).To(Equal([]string{"arg1", "arg2"}))
-		})
-
-		It("should return the top level command if it is a TreeCommand with no sub commands", func() {
-			treeCmd := NewTreeCommand(CommandMap{})
-			commands.Add("treeCmd", treeCmd)
-			cmd, arguments, _ := commands.Find([]string{"treeCmd", "arg", "arg2"})
-			Expect(cmd).To(Equal(treeCmd))
-			Expect(arguments).To(Equal([]string{"arg", "arg2"}))
 		})
 	})
 
 	Describe("Exec", func() {
 		It("Should return an error if executing a command that can't be found", func() {
 			Expect(commands.Exec([]string{"invalid"})).To(MatchError(ErrNoMatchingCommand))
+		})
+
+		It("Should set os.Args to the program name and the argument list", func() {
+			cmd := newCallbackCommand(func(arguments []string) error {
+				Expect(os.Args).To(Equal([]string{"cmd", "arg1", "arg2"}))
+				return nil
+			})
+			commands.Add("cmd", cmd)
+			oldArgs := os.Args
+			Expect(commands.Exec([]string{"cmd", "arg1", "arg2"})).To(Succeed())
+			Expect(os.Args).To(Equal(oldArgs))
 		})
 	})
 })
@@ -143,6 +166,14 @@ var _ = Describe("TreeCommand", func() {
 				"subCmd2": newTestCommand(),
 			})
 			commands = CommandMap{"tlc": tlc}
+		})
+
+		It("should return the top level command if it is a TreeCommand with no sub commands", func() {
+			treeCmd := NewTreeCommand(CommandMap{})
+			commands.Add("treeCmd", treeCmd)
+			cmd, arguments, _ := commands.Find([]string{"treeCmd", "arg", "arg2"})
+			Expect(cmd).To(Equal(treeCmd))
+			Expect(arguments).To(Equal([]string{"arg", "arg2"}))
 		})
 
 		It("should return an error for no matching sub-command", func() {
@@ -170,26 +201,13 @@ var _ = Describe("TreeCommand", func() {
 		It("Should return nil when executing", func() {
 			Expect(tlc.Exec([]string{})).To(BeNil())
 		})
-	})
-	/*
-		Describe("Executing a command", func() {
-			var commands CommandMap
-			var command *testCommand
 
-			BeforeEach(func() {
-				command = newTestCommand()
-				commands = CommandMap{"cmd": command}
-			})
-
-			It("Should execute the command if found", func() {
-				Expect(commands.Exec([]string{"cmd"})).To(Succeed())
-				Expect(command.executed).To(BeTrue())
-			})
-
-			It("Shoud return an error if the command is not found", func() {
-				err := commands.Exec([]string{"foo"})
-				Expect(err).To(MatchError(ErrNoMatchingCommand))
-			})
+		It("Should set os.Args[0] to the full command path when executing the command", func() {
+			tlc.Add("subCmd3", newCallbackCommand(func(arguments []string) error {
+				Expect(os.Args).To(Equal([]string{"tlc subCmd3", "arg1", "arg2"}))
+				return nil
+			}))
+			Expect(commands.Exec([]string{"tlc", "subCmd3", "arg1", "arg2"})).To(Succeed())
 		})
-	*/
+	})
 })
