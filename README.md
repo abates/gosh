@@ -21,7 +21,7 @@ import (
 
 type cmd string
 
-func (c cmd) Exec(arguments []string) error {
+func (c cmd) Exec() error {
   fmt.Printf("Executing %s\n", string(c))
   return nil
 }
@@ -37,8 +37,9 @@ func main() {
 ```
 
 Any arguments that follow the command on the prompt are passed into the Exec
-method as a slice of strings.  The shell will initialize with a default line
-editor that implements history, auto-completion and the prompt string.  
+method by way of the os.Args string slice.  The shell will initialize with a
+default line editor that implements history, auto-completion and the prompt
+string.  
 
 The default shell can be supplied with a customized prompter:
 
@@ -56,7 +57,7 @@ Commands can optionally specify auto-completion candidates for their arguments:
 ```go
 type cmd string
 
-func (c cmd) Exec(arguments []string) error {
+func (c cmd) Exec() error {
   fmt.Printf("Executing %s\n", string(c))
   return nil
 }
