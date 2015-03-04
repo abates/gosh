@@ -60,6 +60,11 @@ var _ = Describe("Shell", func() {
 			Expect(err).To(MatchError(ErrNilPrompt))
 			Expect(shell.prompt).To(Equal(oldPrompt))
 		})
+
+		It("Should prohibit setting a nil prompter", func() {
+			err := shell.SetPrompter(nil)
+			Expect(err).To(MatchError(ErrNilPrompter))
+		})
 	})
 
 	Describe("errors", func() {
